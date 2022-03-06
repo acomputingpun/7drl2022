@@ -7,8 +7,8 @@ class Terrain():
 
     blocksMovement = False
 
-    def __init__(self):
-        self.tile = None
+    def __init__(self, tile = None):
+        self.tile = tile
 
     def setTile(self, data):
         self.tile = data

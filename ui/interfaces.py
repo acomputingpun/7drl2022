@@ -17,6 +17,10 @@ class Interface():
 
         self.sysTimer.unpause()
 
+    def advance(self):
+        self.eventHandler.warpEvents(self._activeWarp)
+        self.draw()
+
     def draw(self):
         if self.lastDrawMS + 50 < self.sysTimer.MS():
             self.lastDrawMS = self.sysTimer.MS()
