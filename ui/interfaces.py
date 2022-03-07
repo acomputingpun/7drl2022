@@ -12,16 +12,12 @@ class Interface():
 
         self.sysTimer = timing.SlaveTimer(intModule.SystemTimer())
         self.activeWindow = gamewindows.GameWindow(self)
-        self._activeWarp = gamewindows.GameWindowWarp(self)
+        self._activeWarp = None
 
         self.lastDrawMS = -1000
         self.livingAnimas = []
 
         self.sysTimer.unpause()
-
-    def advance(self):
-        self.eventHandler.warpEvents(self._activeWarp)
-        self.draw()
 
     def draw(self):
         if self.lastDrawMS + 50 < self.sysTimer.MS():
@@ -38,6 +34,9 @@ class Interface():
             self.ren.drawText( (0, 0), self._debugText)
             flushMS = self.sysTimer.MS()
             self.ren.flush()
+
+        for anima in self.livingAnimas[:]:
+            anima.fastUpkeep(self)
 #            print ("draw took", self.sysTimer.MS() - self.lastDrawMS, "(flush", self.sysTimer.MS() - flushMS, ")")
 
     def debugShow(self, text):
@@ -46,6 +45,24 @@ class Interface():
     @property
     def activeWarp(self):
         return self._activeWarp
+    def capture(self, warp):
+        if self.activeWarp is not None:
+            raise Exception()
+        else:
+            self._activeWarp = warp
+
+            self.activeWarp.onTransferFrom(None)
+            self._releaseValue = None
+            while self.activeWarp is not None:
+                self.activeWarp.fastUpkeep()
+                if self.activeWarp is not None:
+                    self.eventHandler.warpEvents(self.activeWarp)
+                self.draw()
+            return self._releaseValue
+    def release(self, value = None):
+        self._releaseValue = value
+        self.activeWarp.onTransferTo(None)
+        self._activeWarp = None
 
     # utility
     def forceQuit(self):
@@ -57,17 +74,10 @@ class Interface():
         self.activeWindow.msgPanel.addMessage(message)
 
     # warp transfers
-    def wtransferPlayerInput(self):
-        self.activeWarp.wtransferPlayerInput()
-    def wtransferAdvanceTime(self):
-        self.activeWarp.wtransferAdvanceTime()
-    def wCanTransfer(self):
-        return False
+    def warpRequestAction(self):
+        return self.capture(self.activeWindow.requestActionWarp(self))
 
     def hasBlockingAnimas(self):
         return len(self.livingAnimas) > 0
-
-    def showActionAnimas(self, action):
-        pass
     def showAnima(self, anima):
         anima.register(self)

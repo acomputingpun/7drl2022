@@ -53,7 +53,13 @@ class Flyer(Anima, scions.Scion):
     def fastUpkeep(self, interf):
         if self.frac() >= 1:
             self.deregister(interf)
-            self.parent.children.remove(self)
+
+    def register(self, interf):
+        super().register(interf)
+        self.parent.children.append(self)
+    def deregister(self, interf):
+        super().deregister(interf)
+        self.parent.children.remove(self)
 
     def drawOutline(self, ren):
         pass

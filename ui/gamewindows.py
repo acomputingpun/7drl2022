@@ -31,6 +31,25 @@ class GameWindow(windows.Window):
         debug_lbf.register(self.interf)
         self.children.append(debug_lbf)
 
+    def afxShiftStep(self, mob, destTile):
+        shiftFlyer = CardinalShiftFlyer(self.gridPanel, mob.tile, destTile)
+        shiftFlyer.register(self.interf)
+        self.interf.capture(AnimaBlockedWarp(self.interf))
+
+    def afxDamageNumber(self, mob, damage):
+        damageFlyer = DamageNumberFlyer(self.gridPanel, damage, destTile)
+        damageFlyer.register(self.interf)
+        self.interf.capture(AnimaBlockedWarp(self.interf))
+
+    def requestActionWarp(self, interf):
+        return GameWindowWarp(interf)
+
+class AnimaBlockedWarp(warps.AnimaBlockedWarp):
+    def warpArrowKey(self, vec, shift = False):
+        print ("atw - arrow key was", vec)
+    def warpOtherKey(self, key):
+        print ("atw - key was", key)
+
 from . import scions
 
 class LoadingBarFlyer(animas.Flyer):
@@ -41,18 +60,6 @@ class LoadingBarFlyer(animas.Flyer):
         ren.drawText((0, 0), "-" * 25)
     def drawContents(self, ren):
         ren.drawText((0, 0), "+" * math.floor(25 * self.frac()), fg = (255, 0, 0))
-
-class AdvanceTimeWarp(warps.Warp):
-    def warpArrowKey(self, vec, shift = False):
-        print ("atw - arrow key was", vec)
-
-    def warpOtherKey(self, key):
-        print ("atw - key was", key)
-
-    def wtransferAdvanceTime(self):
-        pass
-    def wtransferPlayerInput(self):
-        self.transfer(GameWindowWarp(self.interf))
 
 import actions
 class GameWindowWarp(warps.Warp):
@@ -71,7 +78,7 @@ class GameWindowWarp(warps.Warp):
         if key == 113: # q
             self.interf.activeWindow.debug_addLBF()
         elif key == 119: # w
-            pass
+            self.trySubmitAction(actions.TakeDamage(self.hero, 3) )
         elif key == 101: # e
             pass
         elif key == 114: # r
@@ -88,11 +95,11 @@ class GameWindowWarp(warps.Warp):
             print ("Key was", key)
 
     def trySubmitAction(self, action):
-        self.state.rSubmitAction(action)
+        self.interf.release(action)
 
     def wtransferAdvanceTime(self):
         self.transfer(AdvanceTimeWarp(self.interf))
-        self.interf.activeWindow.debug_addLBF()
+#        self.interf.activeWindow.debug_addLBF()
     def wtransferPlayerInput(self):
         pass
 
@@ -179,17 +186,26 @@ class TileReflection(scions.Panel):
             ren.drawChar( (1,1), " " )
 
 
-class MobMoveFlyer(animas.Flyer):
+class CardinalShiftFlyer(animas.Flyer):
     xyAnchor = 0,0
 
-    maxMS = 1000
+    maxMS = 250
+    blockingMS = 200
 
-    def __init__(self, parent, mob, dest):
-        super(parent)
-        self.mob = mob
-        self.dest = dest
+    def __init__(self, parent, sourceTile, destTile):
+        super().__init__(parent)
+        self.sourceTile = sourceTile
+        self.destTile = destTile
+
+        self.sourceDraw = self.parent.xyTileToCenter(self.sourceTile.xyPos)
+        self.destDraw = self.parent.xyTileToCenter(self.destTile.xyPos)
+
+        self.moveVec = self.destTile.xyPos - self.sourceTile.xyPos
+        self.drawStepPoses = [self.sourceDraw + self.moveVec*k for k in range(0, self.parent.TILE_SPACING +1)]
 
     def drawOutline(self, ren):
         pass
     def drawContents(self, ren):
-        ren.drawText((0, 0), "+" * math.floor(25 * self.frac()), fg = (255, 0, 0))
+        stepIndex = math.floor(self.frac() * self.parent.TILE_SPACING+1)
+
+        ren.drawChar(self.drawStepPoses[stepIndex], "@", fg = (255, 255, 0))
