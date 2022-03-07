@@ -13,7 +13,7 @@ class TurnScheduler():
 
     def refresh(self):
         if len(self.actors) > 0:
-            while "todo: self.actors[0] has an activation remaining!":
+            while "todo: self.actors[0] has no activation remaining!" and False:
                 "todo: refresh self.actors[0]'s activations"
                 self.actors = self.actors[1:] + self.actors[:1]
 
@@ -28,13 +28,16 @@ class Zone():
         self.turnScheduler.refresh()
 
         if self.curActor is None:
-            return rsignals.Intercession(self)
+            return rsignals.Intercession(self, "no existing actor")
         else:
-            return self.curActor.tryAdvance()
+            return self.curActor.tryRequestAction()
 
     @property
     def curActor(self):
         return self.turnScheduler.curActor()
+
+    def addActor(self, actor):
+        self.turnScheduler.actors.append(actor)
 
     def fillGrid(self):
         raise NotImplementedError

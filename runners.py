@@ -25,13 +25,20 @@ class Runner():
                 "todo: either way, we probably redraw."
 
                 if isinstance(rSignal, rsignals.ActionCompleted):
-                    rSignal.blockingEntity.rCleanup()
+                    self.state.rCleanupAction(rSignal.blockingEntity)
                 elif isinstance(rSignal, rsignals.ActionNotStarted):
                     rSignal.blockingEntity.rStart()
+                elif isinstance(rSignal, rsignals.ActionInProgress):
+                    if True or "todo: if the action's display is complete or non-blocking (we need to check w/ the interface) then we can execute it properly":
+                        rSignal.blockingEntity.rExecute()
+
                 elif isinstance(rSignal, rsignals.ActorIntercession):
+                    self.interf.wtransferPlayerInput()
                     "todo: We need a player-inputted command from the interface (probably to submit an action)"
                 else:
-                    pass
+                    raise Exception("We don't know how to handle this signal!")
                 self.interf.advance()
+
+                self.interf.debugShow(rSignal)
             else:
                 raise Exception()

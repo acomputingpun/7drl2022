@@ -1,4 +1,5 @@
 from . import warps, windows
+import vecs, dirconst
 #from . import warps, windows, gridpanels, syspanels, nonpanels, attpanels, messages, backpanels, animas
 #from . import fx
 #import random
@@ -23,9 +24,30 @@ class GameWindow(windows.Window):
     def drawContents(self, ren):
         ren.drawText( (0,0), "hello world" )
 
-class GameWindowWarp(warps.Warp):
-    def warpArrowKey(self, key, shift = False):
+class AdvanceTimeWarp(warps.Warp):
+    def warpArrowKey(self, vec, shift = False):
+        print ("atw - arrow key was", vec)
+
+    def warpOtherKey(self, key):
+        print ("atw - key was", key)
+
+    def wtransferAdvanceTime(self):
         pass
+    def wtransferPlayerInput(self):
+        self.transfer(GameWindowWarp(self.interf))
+
+import actions
+class GameWindowWarp(warps.Warp):
+    @property
+    def hero(self):
+        return self.interf.state.hero
+
+    def warpArrowKey(self, vec, shift = False):
+        if vec == dirconst.IN_PLACE:
+            self.trySubmitAction(actions.Wait(self.hero))
+        elif vec in dirconst.CARDINALS:
+            destTile = self.hero.tile.relTile(vec)
+            self.trySubmitAction( actions.ShiftStep(self.hero, destTile ))
 
     def warpOtherKey(self, key):
         if key == 113: # q
@@ -46,6 +68,14 @@ class GameWindowWarp(warps.Warp):
             pass
         else:
             print ("Key was", key)
+
+    def trySubmitAction(self, action):
+        self.state.rSubmitAction(action)
+
+    def warpAdvanceTime(self):
+        self.transfer(AdvanceTimeWarp(self.interf))
+    def wtransferPlayerInput(self):
+        pass
 
 from . import scions
 import vecs, utils
@@ -69,8 +99,14 @@ class GridPanel(scions.Panel):
         super().__init__(parent)
 
         self.trMatrix = [[TileReflection(self, vecs.Vec2(x,y)) for y in range(self.TILES_ON_GRID)] for x in range(self.TILES_ON_GRID)]
-
         self.children = [k for k in self.allTiles()]
+
+        self.reflect(self.ancestor.interf.state.activeZone.grid)
+
+    def reflect(self, grid):
+        self.grid = grid
+        for pos in self.allPoses():
+            self.lookup(pos).reflect(self.grid.lookup(pos))
 
     @property
     def xyTileSize(self):
@@ -107,11 +143,18 @@ class TileReflection(scions.Panel):
         self.xyTile = xyTile
         self.xyAnchor = self.parent.xyTileToNW(xyTile)
 
+        self._reflector = None
+
+    def reflect(self, tile):
+        self._reflector = tile
+        return self
+
     @property
     def panelSize(self):
         return vecs.Vec2(3, 3)
 
     def drawContents(self, ren):
-        pass
-#    def draw(self):
-#        pass
+        if self._reflector.occupant is not None:
+            ren.drawChar( (1,1), self._reflector.occupant.drawChar, fg=(255, 0, 0) )
+        else:
+            ren.drawChar( (1,1), " " )

@@ -2,6 +2,8 @@ import timing, vecs
 from . import gamewindows
 
 class Interface():
+    _debugText = "debug"
+
     def __init__(self, intModule, state):
         self.state = state
 
@@ -9,8 +11,8 @@ class Interface():
         self.eventHandler = intModule.EventHandler()
 
         self.sysTimer = timing.SlaveTimer(intModule.SystemTimer())
-        self._activeWarp = None
         self.activeWindow = gamewindows.GameWindow(self)
+        self._activeWarp = gamewindows.GameWindowWarp(self)
 
         self.lastDrawMS = -1000
         self.livingAnimas = []
@@ -31,9 +33,15 @@ class Interface():
             self.ren.xyOffset = vecs.Vec2(0,0)
             self.ren.zLevel = 0
             self.activeWindow.draw(self.ren)
+
+            self.ren.xyOffset = vecs.Vec2(0,0)
+            self.ren.drawText( (0, 0), self._debugText)
             flushMS = self.sysTimer.MS()
             self.ren.flush()
 #            print ("draw took", self.sysTimer.MS() - self.lastDrawMS, "(flush", self.sysTimer.MS() - flushMS, ")")
+
+    def debugShow(self, text):
+        self._debugText = str(text)
 
     @property
     def activeWarp(self):
@@ -64,6 +72,11 @@ class Interface():
     # messaging
     def postMessage(self, message):
         self.activeWindow.msgPanel.addMessage(message)
+
+    # warp transfers
+    def wtransferPlayerInput(self):
+        self.activeWarp.wtransferPlayerInput()
+
 
     # warp creators
     def warpAnyKey(self):

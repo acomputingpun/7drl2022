@@ -1,8 +1,7 @@
-import actions, rsignals
+import actions, rsignals, tiles
 
-class Hero(actions.Actor):
+class Hero(tiles.Occupant, actions.Actor):
+    drawChar = "@"
+
     def tryRequestAction(self):
-        return rsignals.ActorIntercession(self)
-
-    def iSubmitAction(self, action):
-        self._submitAction(action)
+        return rsignals.ActionInputRequired(self)
