@@ -46,23 +46,6 @@ class Interface():
     @property
     def activeWarp(self):
         return self._activeWarp
-    def capture(self, warp):
-        if self.activeWarp is not None:
-            raise Exception()
-        else:
-            self._activeWarp = warp
-            self.activeWarp.onTransferFrom(None)
-            self._releaseValue = None
-            while self.activeWarp is not None:
-                self.activeWarp.fastUpkeep()
-                if self.activeWarp is not None:
-                    self.eventHandler.warpEvents(self.activeWarp)
-                self.draw()
-            return self._releaseValue
-    def release(self, value = None):
-        self._releaseValue = value
-        self.activeWarp.onTransferTo(None)
-        self._activeWarp = None
 
     # utility
     def forceQuit(self):
@@ -76,19 +59,15 @@ class Interface():
     # warp transfers
     def wtransferPlayerInput(self):
         self.activeWarp.wtransferPlayerInput()
+    def wtransferAdvanceTime(self):
+        self.activeWarp.wtransferAdvanceTime()
+    def wCanTransfer(self):
+        return False
 
+    def hasBlockingAnimas(self):
+        return len(self.livingAnimas) > 0
 
-    # warp creators
-    def warpAnyKey(self):
-        self.capture(warps.AnyKeyWarp(self))
-    def warpWait(self):
+    def showActionAnimas(self, action):
         pass
-    def warpRequestPlayerAction(self):
-        return self.capture(self.activeWindow.requestActionWarp())
     def showAnima(self, anima):
         anima.register(self)
-    def warpBlockingAnimas(self):
-        self.capture(warps.AnimaBlockedWarp(self))
-    def warpDeath(self):
-        self.capture(warps.AnyKeyWarp(self))
-        self.ren.forceQuit()

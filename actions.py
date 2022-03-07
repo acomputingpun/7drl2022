@@ -7,67 +7,71 @@ class Actor():
     def tryRequestAction(self):
         raise Exception
 
-class Action():
+class BranchAction():
     def __init__(self, actor):
-        self.actor = actor
+        self._subActions = []
         self._started = False
-        self._completed = False
+        self._finished = False
 
-    def tryAdvance(self):
-        if self._completed:
-            return rsignals.ActionCompleted(self)
-        elif self._started:
-            return rsignals.ActionInProgress(self)
-        else:
-            return rsignals.ActionNotStarted(self)
+        self.actor = actor
 
-    def rStart(self):
-        if self._started:
-            raise Exception
-        self._started = True
-
-    def rExecute(self):
+    def tryAdvance(self, interf):
         if not self._started:
-            raise Exception
-        elif self._completed:
-            raise Exception
-        self._execute()
-        self._completed = True
+            self._started = True
+            self._start(interf)
+            raise rsignals.ActionStart(self)
 
-    def _execute(self):
-        raise NotImplementedError(0)
+        while len(self._subActions) > 0:
+            if self._subActions[0]._finished:
+                self._subActions = self._subActions[1:]
+            else:
+                self._subActions[0].tryAdvance()
 
-class Wait(Action):
-    def __init__(self, actor):
-        super().__init__(actor)
+        if not self._finished:
+            self._finish(interf)
+            self._finished = True
 
-    def tryInnerAdvance(self):
-        self._completed = True
-        return rsignals.Advance()
+    def noSubActions(self):
+        return rsignals.ActionCompleted(self)
 
-class ShiftStep(Action):
+    def _start(self, interf):
+        raise NotImplementedError()
+    def _finish(self, interf):
+        raise NotImplementedError()
+
+class Wait(BranchAction):
+    def __init__(self, parent, actor):
+        super().__init__(parent, actor)
+
+    def _start(self, interf):
+        pass
+    def _finish(self, interf):
+        print("mob {} waits".format(self.actor))
+
+class ShiftStep(BranchAction):
     def __init__(self, actor, destTile):
         super().__init__(actor)
         self.destTile = destTile
 
-    def _execute(self):
+    def _start(self, interf):
+        pass
+    def _finish(self, interf):
         self.actor.setTile(self.destTile)
+        print("mob {} moves to {}".format(self.actor, self.destTile))
 
-class BumpAttack(Action):
+class BumpAttack(BranchAction):
     def __init__(sefl, actor, target):
         super().__init__(actor)
         self.target = target
 
-    def _execute(self):
+    def _finish(self, interf):
         "todo: work out the exact behaviour of BumpAttack."
-        return rsignals.Advance()
 
-class PathAttack(Action):
+class PathAttack(BranchAction):
     def __init__(self, actor, target, path):
         super().__init__(actor)
         self.target = target
         self.path = path
 
-    def _execute(self):
+    def _finish(self, interf):
         "todo: work out the exact behaviour of BumpAttack."
-        return rsignals.Advance()

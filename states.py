@@ -1,4 +1,4 @@
-import zones, heros
+import zones, heros, actions, mobs
 
 class State():
     def __init__(self):
@@ -8,26 +8,24 @@ class State():
         self.activeZone.addActor(self.hero)
         self.hero.setTile(self.activeZone.grid.lookup( (4, 4) ))
 
-        self.curAction = None
+        bMob = mobs.Mob()
+        bMob.setTile(self.activeZone.grid.lookup((2, 2)))
+        self.activeZone.addActor(bMob)
 
-    def tryAdvance(self):
-        if self.curAction is not None:
-            return self.curAction.tryAdvance()
-        elif self.activeZone is not None:
-            return self.activeZone.tryAdvance()
-        else:
-            raise NotImplementedError()
+        self._subActions = []
+
+    def tryAdvance(self, interf):
+        while True:
+            if len(self._subActions) == 0:
+                self.tryRequestNextAction(interf)
+            elif self._subActions[0]._finished:
+                self._subActions = self._subActions[1:]
+            else:
+                self._subActions[0].tryAdvance(interf)
+
+    def tryRequestNextAction(self, interf):
+        nextActor = self.hero
+        nextActor.tryRequestAction()
 
     def rSubmitAction(self, action):
-        self._submitAction(action)
-    def rCleanupAction(self, action):
-        if self.curAction is action:
-            self.curAction = None
-        else:
-            raise Exception
-
-    def _submitAction(self, action):
-        if self.curAction is not None:
-            raise Exception
-        else:
-            self.curAction = action
+        self._subActions.append(action)

@@ -1,5 +1,7 @@
-from . import warps, windows
+from . import warps, windows, animas
 import vecs, dirconst
+
+import math
 #from . import warps, windows, gridpanels, syspanels, nonpanels, attpanels, messages, backpanels, animas
 #from . import fx
 #import random
@@ -23,6 +25,22 @@ class GameWindow(windows.Window):
 
     def drawContents(self, ren):
         ren.drawText( (0,0), "hello world" )
+
+    def debug_addLBF(self):
+        debug_lbf = LoadingBarFlyer(self)
+        debug_lbf.register(self.interf)
+        self.children.append(debug_lbf)
+
+from . import scions
+
+class LoadingBarFlyer(animas.Flyer):
+    xyAnchor = 40, 1
+    maxMS = 1000
+
+    def drawOutline(self, ren):
+        ren.drawText((0, 0), "-" * 25)
+    def drawContents(self, ren):
+        ren.drawText((0, 0), "+" * math.floor(25 * self.frac()), fg = (255, 0, 0))
 
 class AdvanceTimeWarp(warps.Warp):
     def warpArrowKey(self, vec, shift = False):
@@ -51,7 +69,7 @@ class GameWindowWarp(warps.Warp):
 
     def warpOtherKey(self, key):
         if key == 113: # q
-            pass
+            self.interf.activeWindow.debug_addLBF()
         elif key == 119: # w
             pass
         elif key == 101: # e
@@ -72,8 +90,9 @@ class GameWindowWarp(warps.Warp):
     def trySubmitAction(self, action):
         self.state.rSubmitAction(action)
 
-    def warpAdvanceTime(self):
+    def wtransferAdvanceTime(self):
         self.transfer(AdvanceTimeWarp(self.interf))
+        self.interf.activeWindow.debug_addLBF()
     def wtransferPlayerInput(self):
         pass
 
@@ -158,3 +177,19 @@ class TileReflection(scions.Panel):
             ren.drawChar( (1,1), self._reflector.occupant.drawChar, fg=(255, 0, 0) )
         else:
             ren.drawChar( (1,1), " " )
+
+
+class MobMoveFlyer(animas.Flyer):
+    xyAnchor = 0,0
+
+    maxMS = 1000
+
+    def __init__(self, parent, mob, dest):
+        super(parent)
+        self.mob = mob
+        self.dest = dest
+
+    def drawOutline(self, ren):
+        pass
+    def drawContents(self, ren):
+        ren.drawText((0, 0), "+" * math.floor(25 * self.frac()), fg = (255, 0, 0))

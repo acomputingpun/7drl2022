@@ -1,4 +1,4 @@
-class Signal():
+class Signal(Exception):
     sigCode = "SIGNAL"
 
     def __init__(self, msg = "?"):
@@ -6,9 +6,6 @@ class Signal():
 
     def __str__(self):
         return self.sigCode + " " + self.msg
-
-class Advance(Signal):
-    sigCode = "ADV"
 
 class Intercession(Signal):
     sigCode = "INTR"
@@ -20,21 +17,7 @@ class Intercession(Signal):
     def __str__(self):
         return self.sigCode + "|" + str(self.blockingEntity) + "|" + self.msg
 
-class ActionIntercession(Intercession):
-    sigCode = "IACTION"
-
-class ActionCompleted(ActionIntercession):
-    sigCode = "IA_DONE"
-class ActionNotStarted(ActionIntercession):
-    sigCode = "IA_READY"
-class ActionInProgress(ActionIntercession):
-    sigCode = "IA_PROG"
-
-
-class ActorIntercession(Intercession):
-    sigCode = "IACTOR"
-class ActionInputRequired(ActorIntercession):
+class ActionStart(Intercession):
+    sigCode = "IA_START"
+class ActionInputRequired(Intercession):
     sigCode = "INP_ACTREQ"
-
-class ZoneIntercession(Intercession):
-    sigCode = "IZONE"

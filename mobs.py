@@ -1,4 +1,4 @@
-import actions, rsignals
+import actions, rsignals, tiles
 
 class Mob(tiles.Occupant, actions.Actor):
     drawChar = "m"
@@ -8,11 +8,11 @@ class Mob(tiles.Occupant, actions.Actor):
         self.brain = WaitBrain(self)
 
     def tryRequestAction(self):
-        self.bSubmitAction(self.brain.getNextAction())
-        return rsignals.Advance()
+        return self.bSubmitAction(self.brain.getNextAction())
 
     def bSubmitAction(self, action):
         self.zone._submitAction(action)
+        return self.action.tryAdvance()
 
 class Brain():
     def __init__(self, mob):
