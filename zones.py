@@ -13,8 +13,8 @@ class TurnScheduler():
 
     def refresh(self):
         if len(self.actors) > 0:
-            while "todo: self.actors[0] has no activation remaining!" and False:
-                "todo: refresh self.actors[0]'s activations"
+            while not self.actors[0].hasTimeslots():
+                self.actors[0].refreshTimeslots()
                 self.actors = self.actors[1:] + self.actors[:1]
 
 class Zone():
@@ -32,8 +32,8 @@ class Zone():
         else:
             return self.curActor.tryRequestAction()
 
-    @property
-    def curActor(self):
+    def getCurActor(self):
+        self.turnScheduler.refresh()
         return self.turnScheduler.curActor()
 
     def addActor(self, actor):

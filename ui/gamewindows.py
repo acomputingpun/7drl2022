@@ -11,13 +11,10 @@ class GameWindow(windows.Window):
         super().__init__(interf)
 
         self.gridPanel = GridPanel(self)
-#        self.backPanel = backpanels.BackgroundPanel(self)
         self.msgPanel = MessagePanel(self)
+        self.sidePanel = SidePanel(self)
 
-        self.children = [self.gridPanel, self.msgPanel]
-
-    def requestActionWarp(self):
-        raise NotImplementedError()
+        self.children = [self.gridPanel, self.msgPanel, self.sidePanel]
 
     @property
     def hero(self):
@@ -69,7 +66,7 @@ class GameWindowWarp(warps.Warp):
 
     def warpArrowKey(self, vec, shift = False):
         if vec == dirconst.IN_PLACE:
-            self.trySubmitAction(actions.Wait(self.hero))
+            self.trySubmitAction( actions.Wait(self.hero) )
         elif vec in dirconst.CARDINALS:
             destTile = self.hero.tile.relTile(vec)
             self.trySubmitAction( actions.ShiftStep(self.hero, destTile ))
@@ -89,6 +86,8 @@ class GameWindowWarp(warps.Warp):
             pass
         elif key == 100: #d
             pass
+        elif key == 120: # x
+            self.transfer(ExamineWarp(self.interf))
         elif key == 9: # tab
             pass
         else:
@@ -103,23 +102,67 @@ class GameWindowWarp(warps.Warp):
     def wtransferPlayerInput(self):
         pass
 
+class ExamineWarp(warps.CursorWarp):
+    def __init__(self, interf):
+        super().__init__(interf)
+        self.cursorFlyer = ExamineCursor(self.window.gridPanel, self.state.hero.xyPos )
+
+class ExamineCursor(scions.Scion):
+    def __init__(self, parent, xyStartTile):
+        super().__init__(parent)
+        self.xyTile = xyStartTile
+        self.xyAnchor = self.parent.xyTileToNW(self.xyTile)
+
+    @property
+    def grid(self):
+        return self.parent.grid
+
+    def drawOutline(self, ren):
+        pass
+    def drawContents(self, ren):
+        ren.drawChar ((0, 0), "*")
+
+    def shift(self, vec):
+        xyNew = self.xyTile + vec
+        if self.grid.rectContains(xyNew):
+            self.xyTile = xyNew
+            self.xyAnchor = self.parent.xyTileToNW(self.xyTile)
+
 from . import scions
 import vecs, utils
 
+class SidePanel(scions.Panel):
+    xyAnchor = (45, 0)
+    _panelSize = vecs.Vec2(30, 44)
+
+    def __init__(self, parent):
+        super().__init__(parent)
+
+    def drawOutline(self, ren):
+        super().drawOutline(ren)
+
+        for y in range(self.panelSize.y):
+            ren.drawChar((0, y), "|" )
+
+    @property
+    def hero(self):
+        return self.interf.state.hero
+
+    def drawContents(self, ren):
+        ren.drawText( (0, 0), "sidepanel")
+
 class MessagePanel(scions.Panel):
     xyAnchor = (0, 44)
+    _panelSize = vecs.Vec2(60, 6)
 
     def drawContents(self, ren):
         ren.drawText( (0, 0), "messagepanel")
-
-    @property
-    def panelSize(self):
-        return vecs.Vec2(60, 6)
 
 class GridPanel(scions.Panel):
     TILE_SPACING = 4
     TILES_ON_GRID = 11
     xyAnchor = (1, 1)
+    _panelSize = vecs.Vec2(43, 43)
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -150,11 +193,6 @@ class GridPanel(scions.Panel):
     def rectContains(self, xyPos):
         return utils.rectContains(((0,0), self.xyTileSize), xyPos)
 
-
-    @property
-    def panelSize(self):
-        return vecs.Vec2(43, 43)
-
     def drawContents(self, ren):
         ren.drawText( (0, 0), "gridpanel")
 
@@ -164,6 +202,8 @@ class GridPanel(scions.Panel):
         return self.xyTileToNW(xyTile) + (1, 1)
 
 class TileReflection(scions.Panel):
+    _panelSize = vecs.Vec2(3, 3)
+
     def __init__(self, parent, xyTile):
         super().__init__(parent)
         self.xyTile = xyTile
@@ -174,10 +214,6 @@ class TileReflection(scions.Panel):
     def reflect(self, tile):
         self._reflector = tile
         return self
-
-    @property
-    def panelSize(self):
-        return vecs.Vec2(3, 3)
 
     def drawContents(self, ren):
         if self._reflector.occupant is not None:

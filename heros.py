@@ -1,6 +1,6 @@
-import actions, rsignals, tiles
+import actors, rsignals, tiles
 
-class Hero(tiles.Occupant, actions.Actor):
+class Hero(tiles.Occupant, actors.Actor):
     drawChar = "@"
 
     def tryRequestAction(self, interf):

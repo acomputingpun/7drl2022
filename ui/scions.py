@@ -33,6 +33,8 @@ class Scion():
         return self.ancestor.interf
 
 class Panel(Scion):
+    _panelSize = (1,1)
+
     def drawOutline(self, ren):
         for x in range(self.panelSize.x):
             ren.drawChar((x, 0), "x" )
@@ -44,7 +46,7 @@ class Panel(Scion):
 
     @property
     def panelSize(self):
-        raise NotImplementedError()
+        return self._panelSize
 
 class Flyer(Scion):
     def drawOutline(self, ren):
