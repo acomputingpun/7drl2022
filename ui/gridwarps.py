@@ -1,6 +1,6 @@
 import vecs, dirconst
 from . import warps, gridpanels
-import actions
+import actions, attacks
 
 class GameWindowWarp(warps.Warp):
     @property
@@ -24,7 +24,7 @@ class RequestActionWarp(GameWindowWarp):
         elif key == 119: # w
             self.trySubmitAction(actions.TakeDamage(self.hero, 3) )
         elif key == 101: # e
-            pass
+            self.interf.activeWindow.debug_afxZone()
         elif key == 114: # r
             pass
         elif key == 97: # a
@@ -34,7 +34,7 @@ class RequestActionWarp(GameWindowWarp):
         elif key == 100: #d
             pass
         elif key == 102: #f
-            self.transfer(AttackWarp(self.interf, None))
+            self.transfer(AttackWarp(self.interf, attacks.StubBullet()))
         elif key == 120: # x
             self.transfer(ExamineWarp(self.interf))
         elif key == 9: # tab
@@ -69,6 +69,14 @@ class AttackWarp(CursorWarp):
     def __init__(self, interf, atkProfile):
         super().__init__(interf)
         self.cursorFlyer = gridpanels.SelectAttackCursor(self.window.gridPanel, self.state.hero.xyPos )
+        self.zoneOverlay = gridpanels.ZoneOverlay( self.window.gridPanel, atkProfile.inRangePosesFrom(self.state.hero.xyPos) )
+
+    def onTransferFrom(self, other):
+        self.window.gridPanel.children.append(self.cursorFlyer)
+        self.window.gridPanel.children.append(self.zoneOverlay)
+    def onTransferTo(self, other):
+        self.window.gridPanel.children.remove(self.cursorFlyer)
+        self.window.gridPanel.children.remove(self.zoneOverlay)
 
     def warpSelectKey(self):
         print ("Select key was pressed over tile", self.cursorTile(), "w/occ", self.cursorMob, "and path", self.cursorFlyer.xyPathNodes)

@@ -27,6 +27,9 @@ class GameWindow(windows.Window):
         debug_lbf = LoadingBarFlyer(self)
         debug_lbf.register(self.interf)
         self.children.append(debug_lbf)
+    def debug_afxZone(self):
+        debug_afx = gridpanels.ZoneOverlay(self.gridPanel, [vecs.Vec2(2,2), vecs.Vec2(2, 3), vecs.Vec2(2,4), vecs.Vec2(3, 4)] )
+        self.gridPanel.children.append(debug_afx)
 
     def afxShiftStep(self, mob, destTile):
         shiftFlyer = CardinalShiftFlyer(self.gridPanel, mob.tile, destTile)
@@ -126,13 +129,7 @@ class PathAttackFlyer(animas.Flyer):
         super().__init__(parent)
         self.pathTiles = path
         self.xyPathPoses = [tile.xyPos for tile in self.pathTiles]
-
-        self.xyDrawPoses = []
-        for (xySource, xyDest) in zip( self.xyPathPoses[:-1], self.xyPathPoses[1:] ):
-            vec = xyDest - xySource
-            self.xyDrawPoses += [self.parent.xyTileToCenter(xySource) + (vec * k) for k in range(self.parent.TILE_SPACING)]
-
-        self.xyDrawPoses = self.xyDrawPoses + [self.parent.xyTileToCenter(self.xyPathPoses[-1])]
+        self.xyDrawPoses = self.parent.pathToDraws(self.xyPathPoses)
 
         self.blockingMS = self.stepMS * len(self.xyDrawPoses)
         self.maxMS = self.stepMS * (len(self.xyDrawPoses) + self.tailLength)

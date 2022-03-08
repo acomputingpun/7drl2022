@@ -1,5 +1,5 @@
 from . import scions, animas
-import vecs, utils
+import vecs, utils, dirconst
 import random
 
 class GridPanel(scions.Panel):
@@ -62,7 +62,60 @@ class GridPanel(scions.Panel):
     def xyTileToNW(self, xyTile):
         return (xyTile * self.TILE_SPACING)
     def xyTileToCenter(self, xyTile):
-        return self.xyTileToNW(xyTile) + (1, 1)
+        return vecs.Vec2(1, 1) + self.xyTileToNW(xyTile)
+
+    def pathToDraws(self, pathPoses):
+        xyDraws = []
+
+        for (pathSource, pathDest) in zip( pathPoses[:-1], pathPoses[1:] ):
+            vec = pathDest - pathSource
+            xyDraws += [self.xyTileToCenter(pathSource) + (vec * k) for k in range(self.TILE_SPACING)]
+
+        xyDraws.append (self.xyTileToCenter(pathPoses[-1]))
+        return xyDraws
+
+
+    def zoneToTileDraws(self, zonePoses):
+        xyDraws = []
+        for zonePos in zonePoses:
+            zpDraw = self.xyTileToCenter(zonePos)
+            xyDraws = xyDraws + [vec+zpDraw for vec in dirconst.NONAGONALS]
+        return xyDraws
+
+    def zoneToOutlineDraws(self, zonePoses):
+        zpSet = set(zonePoses)
+        xyDraws = []
+        for zonePos in zpSet:
+            zpDraw = self.xyTileToCenter(zonePos)
+
+            for diag in dirconst.DIAGONALS:
+                if zonePos + diag not in zpSet:
+                    xyDraws.append( diag*2 + zpDraw )
+
+            for card in dirconst.CARDINALS:
+                if zonePos + card not in zpSet:
+                    xyDraws.append( card*2 + zpDraw )
+                    xyDraws.append( card*2 + zpDraw + dirconst.ROT_CW[card] )
+                    xyDraws.append( card*2 + zpDraw + dirconst.ROT_CCW[card] )
+        return xyDraws
+
+    def zoneToGutterDraws(self, zonePoses):
+        zpSet = set(zonePoses)
+        xyDraws = set()
+        for zonePos in zpSet:
+            zpDraw = self.xyTileToCenter(zonePos)
+
+            for diag in dirconst.DIAGONALS:
+                if (zonePos + diag in zpSet) and (zonePos + (diag.x, 0) in zpSet) and (zonePos + (0, diag.y) in zpSet):
+                    xyDraws.add( zpDraw + diag*2 )
+
+            for card in dirconst.CARDINALS:
+                if zonePos + card in zpSet:
+                    xyDraws.add( card*2 + zpDraw )
+                    xyDraws.add( card*2 + zpDraw + dirconst.ROT_CW[card] )
+                    xyDraws.add( card*2 + zpDraw + dirconst.ROT_CCW[card] )
+        return [k for k in xyDraws]
+
 
 class TileReflection(scions.Panel):
     _panelSize = vecs.Vec2(3, 3)
@@ -168,3 +221,23 @@ class ExamineCursor(GridCursor):
 
 class SelectAttackCursor(TrailCursor):
     fgDebug = (255, 0, 0)
+
+
+class ZoneOverlay(scions.Scion):
+    bgDebug = (255, 255, 255)
+
+    def __init__(self, parent, zonePoses):
+        super().__init__(parent)
+
+        self.innerDraws = self.parent.zoneToTileDraws(zonePoses) + self.parent.zoneToGutterDraws(zonePoses)
+        self.outlineDraws = self.parent.zoneToOutlineDraws(zonePoses)
+
+#        print ("innerDraws", self.innerDraws, "outlineDraws", self.outlineDraws)
+
+    def drawOutline(self, ren):
+        for xyDraw in self.outlineDraws:
+            ren.drawChar( xyDraw, "#" )
+
+    def drawContents(self, ren):
+        for xyDraw in self.innerDraws:
+            ren.drawChar( xyDraw, "z" )

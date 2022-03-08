@@ -26,10 +26,15 @@ class Renderer():
 
         self.xSize, self.ySize = xSize, ySize
         self.zBuffer = [[0 for y in range(ySize)] for x in range(xSize)]
-        self.matrix = [[32 for y in range(ySize)] for x in range(xSize)]
+
+        self.charMatrix = [[32 for y in range(ySize)] for x in range(xSize)]
         self.fgMatrix = [[(255, 255, 255) for y in range(ySize)] for x in range(xSize)]
         self.bgMatrix = [[(0, 0, 0) for y in range(ySize)] for x in range(xSize)]
-        self.dirty = [[True for y in range(ySize)] for x in range(xSize)]
+        self.computeDirty = [[True for y in range(ySize)] for x in range(xSize)]
+
+        self.charMatrixPrev = [[32 for y in range(ySize)] for x in range(xSize)]
+        self.fgMatrixPrev = [[(255, 255, 255) for y in range(ySize)] for x in range(xSize)]
+        self.bgMatrixPrev = [[(0, 0, 0) for y in range(ySize)] for x in range(xSize)]
 
         self.xyOffset = (0,0)
         self.zLevel = 0
@@ -108,33 +113,46 @@ class Renderer():
             if self.zBuffer[x][y] <= z:
                 self.zBuffer[x][y] = z
                 if value != None:
-                    if self.matrix[x][y] != value:
-                        self.matrix[x][y] = value
-                        self.dirty[x][y] = True
+                    if self.charMatrix[x][y] != value:
+                        self.charMatrix[x][y] = value
+                        self.computeDirty[x][y] = True
                 if fg != None:
                     if self.fgMatrix[x][y] != fg:
                         self.fgMatrix[x][y] = fg
-                        self.dirty[x][y] = True
+                        self.computeDirty[x][y] = True
                 if bg != None:
                     if self.bgMatrix[x][y] != bg:
                         self.bgMatrix[x][y] = bg
-                        self.dirty[x][y] = True
+                        self.computeDirty[x][y] = True
 
     def flush(self):
         for y in range(self.ySize):
             for x in range(self.xSize):
-                if self.dirty[x][y]:
-                    self.dirty[x][y] = False
-                    if self.matrix[x][y] < 0:
-                        sourceRect = self.intMap[-self.matrix[x][y]]
-                    else:
-                        sourceRect = self.charMap[self.matrix[x][y]]
+                if self.computeDirty[x][y]:
+                    self.computeDirty[x][y] = False
 
-                    destRect = sdl2.SDL_Rect(x*GLYPH_X,y*GLYPH_Y, GLYPH_X, GLYPH_Y)
-                    sdl2.SDL_SetTextureColorMod(self.baseTex,  *self.bgMatrix[x][y])
-                    sdl2.SDL_RenderCopy(self.rcon, self.baseTex, self.intMap[219], destRect)
-                    sdl2.SDL_SetTextureColorMod(self.baseTex,  *self.fgMatrix[x][y])
-                    sdl2.SDL_RenderCopy(self.rcon, self.baseTex, sourceRect, destRect)
+                    drawDirty = False
+                    if self.charMatrix[x][y] != self.charMatrixPrev[x][y]:
+                        drawDirty = True
+                        self.charMatrixPrev[x][y] = self.charMatrix[x][y]
+                    if self.fgMatrix[x][y] != self.fgMatrixPrev[x][y]:
+                        drawDirty = True
+                        self.fgMatrixPrev[x][y] = self.fgMatrix[x][y]
+                    if self.bgMatrix[x][y] != self.bgMatrixPrev[x][y]:
+                        drawDirty = True
+                        self.bgMatrixPrev[x][y] = self.bgMatrix[x][y]
+
+                    if drawDirty:
+                        if self.charMatrixPrev[x][y] < 0:
+                            sourceRect = self.intMap[-self.charMatrix[x][y]]
+                        else:
+                            sourceRect = self.charMap[self.charMatrix[x][y]]
+
+                        destRect = sdl2.SDL_Rect(x*GLYPH_X,y*GLYPH_Y, GLYPH_X, GLYPH_Y)
+                        sdl2.SDL_SetTextureColorMod(self.baseTex,  *self.bgMatrix[x][y])
+                        sdl2.SDL_RenderCopy(self.rcon, self.baseTex, self.intMap[219], destRect)
+                        sdl2.SDL_SetTextureColorMod(self.baseTex,  *self.fgMatrix[x][y])
+                        sdl2.SDL_RenderCopy(self.rcon, self.baseTex, sourceRect, destRect)
 #                    sdl2.SDL_BlitSurface(self.charMap[self.matrix[x][y]], None, self.con, sdl2.SDL_Rect(x*GLYPH_X,y*GLYPH_Y, GLYPH_X, GLYPH_Y))
 #        sdl2.SDL_UpdateWindowSurface(self.window)
         sdl2.SDL_RenderPresent(self.rcon);

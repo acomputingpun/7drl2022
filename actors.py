@@ -34,6 +34,3 @@ class Actor():
         interf.activeWindow.afxPathAttack(self, atkProfile, target, path)
         "todo: handle the actual effects of the attack here"
         target.actTakeDamage(2, interf)
-
-class AttackProfile():
-    pass
