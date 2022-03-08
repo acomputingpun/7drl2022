@@ -73,7 +73,7 @@ class AttackWarp(CursorWarp):
     def warpSelectKey(self):
         print ("Select key was pressed over tile", self.cursorTile(), "w/occ", self.cursorMob, "and path", self.cursorFlyer.xyPathNodes)
         if self.cursorMob() is not None:
-            self.trySubmitAction(actions.PathAttack(self.hero, None, self.cursorMob, self.cursorFlyer.pathTiles()) )
+            self.trySubmitAction(actions.PathAttack(self.hero, None, self.cursorMob(), self.cursorFlyer.pathTiles()) )
 
     def cursorMob(self):
         return self.cursorTile().occupant

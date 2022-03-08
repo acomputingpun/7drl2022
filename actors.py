@@ -1,5 +1,6 @@
 class Actor():
     timeslots = 1
+    health = 10
 
     def __init__(self):
         self.curAction = None
@@ -32,6 +33,7 @@ class Actor():
     def actPathAttack(self, atkProfile, target, path, interf):
         interf.activeWindow.afxPathAttack(self, atkProfile, target, path)
         "todo: handle the actual effects of the attack here"
+        target.actTakeDamage(2, interf)
 
 class AttackProfile():
     pass

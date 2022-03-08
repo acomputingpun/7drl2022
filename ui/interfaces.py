@@ -20,7 +20,7 @@ class Interface():
         self.sysTimer.unpause()
 
     def draw(self):
-        if self.lastDrawMS + 50 < self.sysTimer.MS():
+        if self.lastDrawMS + 25 < self.sysTimer.MS():
             self.lastDrawMS = self.sysTimer.MS()
 
             for anima in self.livingAnimas[:]:
@@ -34,10 +34,10 @@ class Interface():
             self.ren.drawText( (0, 0), self._debugText)
             flushMS = self.sysTimer.MS()
             self.ren.flush()
+            print ("draw took", self.sysTimer.MS() - self.lastDrawMS, "(flush", self.sysTimer.MS() - flushMS, ")")
 
         for anima in self.livingAnimas[:]:
             anima.fastUpkeep(self)
-#            print ("draw took", self.sysTimer.MS() - self.lastDrawMS, "(flush", self.sysTimer.MS() - flushMS, ")")
 
     def debugShow(self, text):
         self._debugText = str(text)

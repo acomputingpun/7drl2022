@@ -51,6 +51,9 @@ def allPoses(s, e):
 #    print ("P", poses)
     return poses
 
+def range2(e):
+    return allPoses((0,0),e)
+
 def rectContains(rect, xy):
     (rx, ry), (rsx, rsy) = rect
     x, y = xy

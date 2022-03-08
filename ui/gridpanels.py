@@ -1,11 +1,14 @@
-from . import scions
+from . import scions, animas
 import vecs, utils
+import random
 
 class GridPanel(scions.Panel):
     TILE_SPACING = 4
     TILES_ON_GRID = 11
     xyAnchor = (1, 1)
     _panelSize = vecs.Vec2(43, 43)
+
+    NUM_TILE_REDRAW_GROUPS = 8
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -14,6 +17,21 @@ class GridPanel(scions.Panel):
         self.children = [k for k in self.allTiles()]
 
         self.reflect(self.ancestor.interf.state.activeZone.grid)
+
+        self.tileGlowAnima = animas.Periodic(self.interf, periodMS = 5000)
+        self.curRedrawGroupID = 0
+        self.setupTileRedrawGroups()
+
+    def setupTileRedrawGroups(self):
+        for (tileIndex, tile) in enumerate(self.allTiles()):
+            if tileIndex % self.NUM_TILE_REDRAW_GROUPS == 0:
+                redrawGroupIDs = [k for k in range(self.NUM_TILE_REDRAW_GROUPS)] 
+                random.shuffle(redrawGroupIDs)
+            tile.redrawGroup = redrawGroupIDs[tileIndex % self.NUM_TILE_REDRAW_GROUPS]
+
+    def drawChildren(self, ren):
+        self.curRedrawGroupID = (self.curRedrawGroupID + 1) % self.NUM_TILE_REDRAW_GROUPS
+        super().drawChildren(ren)
 
     def reflect(self, grid):
         self.grid = grid
@@ -53,16 +71,34 @@ class TileReflection(scions.Panel):
         self.xyAnchor = self.parent.xyTileToNW(xyTile)
 
         self._reflector = None
+        self.children = []
+
+        self.redrawGroup = 0
+        self.savedGlowValue = 0
 
     def reflect(self, tile):
         self._reflector = tile
         return self
 
+    def drawOutline(self, ren):
+        if self.parent.curRedrawGroupID == self.redrawGroup:
+            self.savedGlowValue = 0.05 * self.parent.tileGlowAnima.sawtoothFrac()
+
+        baseBG = self._reflector.terrain.displayBG
+        baseFG = self._reflector.terrain.displayFG
+
+        glowBG = utils.interp3( baseBG, self.savedGlowValue, (255, 255, 255) )
+        glowFG = utils.interp3( baseFG, self.savedGlowValue, (255, 255, 255) )
+
+        for xy in utils.range2(self.panelSize):
+            ren.drawChar( xy, ".", fg = glowFG, bg = glowBG )
+
     def drawContents(self, ren):
         if self._reflector.occupant is not None:
             ren.drawChar( (1,1), self._reflector.occupant.drawChar, fg=(255, 0, 0) )
         else:
-            ren.drawChar( (1,1), " " )
+            pass
+#            ren.drawChar( (1,1), " " )
 
 class GridCursor(scions.Scion):
     fgDebug = (255, 255, 255)

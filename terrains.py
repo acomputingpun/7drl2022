@@ -2,8 +2,8 @@ import xchars, random
 
 class Terrain():
     displayChar = ord("?")
-    displayFG = (10, 10, 10)
-    displayBG = (200, 200, 200)
+    displayFG = (60, 120, 60)
+    displayBG = (20, 40, 20)
 
     blocksMovement = False
 

@@ -34,7 +34,7 @@ class GameWindow(windows.Window):
         self.interf.capture(AnimaBlockedWarp(self.interf))
 
     def afxDamageNumber(self, mob, damage):
-        damageFlyer = DamageNumberFlyer(self.gridPanel, damage, destTile)
+        damageFlyer = DamageNumberFlyer(self.gridPanel.lookup(mob.tile.xyPos), damage)
         damageFlyer.register(self.interf)
         self.interf.capture(AnimaBlockedWarp(self.interf))
 
@@ -95,7 +95,7 @@ class MessagePanel(scions.Panel):
         ren.drawText( (0, 0), "messagepanel")
 
 class CardinalShiftFlyer(animas.Flyer):
-    xyAnchor = 0,0
+    xyAnchor = (0,0)
 
     maxMS = 250
     blockingMS = 200
@@ -133,10 +133,22 @@ class PathAttackFlyer(animas.Flyer):
 
         self.xyDrawPoses = self.xyDrawPoses + [self.parent.xyTileToCenter(self.xyPathPoses[-1])]
 
-        self.maxMS = self.stepMS * (len(self.pathTiles)-1)
+        self.blockingMS = self.maxMS = self.stepMS * (len(self.pathTiles)-1)
 
     def drawContents(self, ren):
         for k, xyDraw in enumerate(self.xyDrawPoses):
             ren.drawChar( xyDraw, "o", fg=(0, 0, 255))
             if k/len(self.xyDrawPoses) > self.frac():
                 break
+
+class DamageNumberFlyer(animas.Flyer):
+    xyAnchor = (1,1)
+    maxMS = 500
+    blockingMS = 0
+
+    def __init__(self, parent, damage):
+        super().__init__(parent)
+        self.damage = damage
+
+    def drawContents(self, ren):
+        ren.drawChar( (0, 0), "2", fg = (255, 0, 0), bg = (128, 0, 0))
