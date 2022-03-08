@@ -101,17 +101,6 @@ class AnyKeyWarp(Warp):
     def warpKeydown(self, key, shift = False):
         self.interf.release(None)
 
-class CursorWarp(Warp):
-    def onTransferFrom(self, other):
-        self.window.gridPanel.children.append(self.cursorFlyer)
-    def onTransferTo(self, other):
-        self.window.gridPanel.children.remove(self.cursorFlyer)
-
-    def warpArrowKey(self, vec, shift = False):
-        self.cursorFlyer.shift(vec)
-    def warpCancelKey(self):
-        self.transfer(self.window.requestActionWarp(self.interf))
-
 class AnimaBlockedWarp(Warp):
     def __init__(self, interf):
         super().__init__(interf)

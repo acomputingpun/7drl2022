@@ -18,7 +18,7 @@ class Wait(Action):
         super().__init__(actor)
 
     def _advance(self, interf):
-        self.actor.aWait(interf)
+        self.actor.actWait(interf)
 
 class ShiftStep(Action):
     def __init__(self, actor, destTile):
@@ -26,7 +26,7 @@ class ShiftStep(Action):
         self.destTile = destTile
 
     def _advance(self, interf):
-        self.actor.aShiftStep(self.destTile, interf)
+        self.actor.actShiftStep(self.destTile, interf)
 
 class TakeDamage(Action):
     def __init__(self, actor, damage):
@@ -34,21 +34,23 @@ class TakeDamage(Action):
         self.damage = damage
 
     def _advance(self, interf):
-        self.actor.aTakeDamage(self.damage, interf)
+        self.actor.actTakeDamage(self.damage, interf)
 
 class BumpAttack(Action):
-    def __init__(self, actor, target):
+    def __init__(self, actor, atkProfile, target):
         super().__init__(actor)
+        self.atkProfile = atkProfile
         self.target = target
 
     def _advance(self, interf):
-        "todo: work out the exact behaviour of BumpAttack."
+        self.actor.actBumpAttack(self.atkData, self.target, interf)
 
 class PathAttack(Action):
-    def __init__(self, actor, target, path):
+    def __init__(self, actor, atkProfile, target, path):
         super().__init__(actor)
+        self.atkProfile = atkProfile
         self.target = target
         self.path = path
 
     def _advance(self, interf):
-        "todo: work out the exact behaviour of BumpAttack."
+        self.actor.actPathAttack(self.atkProfile, self.target, self.path, interf)

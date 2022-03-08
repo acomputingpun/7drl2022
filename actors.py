@@ -11,17 +11,27 @@ class Actor():
         return self.timeslots > 0
     def refreshTimeslots(self):
         self.timeslots = 1
-    def aConsumeTimeslot(self):
+    def actConsumeTimeslot(self):
         self.timeslots = max(self.timeslots - 1, 0)
 
 
-    def aTakeDamage(self, damage, interf):
+    def actTakeDamage(self, damage, interf):
         interf.activeWindow.afxDamageNumber(self, damage)
         if damage >= self.health:
             self.aDie()
-    def aShiftStep(self, destTile, interf):
+    def actShiftStep(self, destTile, interf):
         interf.activeWindow.afxShiftStep(self, destTile)
         self.setTile(destTile)
-        self.aConsumeTimeslot()
-    def aWait(self, interf):
-        self.aConsumeTimeslot()
+        self.actConsumeTimeslot()
+    def actWait(self, interf):
+        self.actConsumeTimeslot()
+
+    def actBumpAttack(self, atkProfile, target, interf):
+        interf.activeWindow.afxPathAttack(self, atkProfile, target)
+
+    def actPathAttack(self, atkProfile, target, path, interf):
+        interf.activeWindow.afxPathAttack(self, atkProfile, target, path)
+        "todo: handle the actual effects of the attack here"
+
+class AttackProfile():
+    pass

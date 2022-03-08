@@ -1,4 +1,4 @@
-from . import warps, windows, animas
+from . import warps, windows, animas, gridpanels, gridwarps
 import vecs, dirconst
 
 import math
@@ -10,7 +10,7 @@ class GameWindow(windows.Window):
     def __init__(self, interf):
         super().__init__(interf)
 
-        self.gridPanel = GridPanel(self)
+        self.gridPanel = gridpanels.GridPanel(self)
         self.msgPanel = MessagePanel(self)
         self.sidePanel = SidePanel(self)
 
@@ -38,8 +38,14 @@ class GameWindow(windows.Window):
         damageFlyer.register(self.interf)
         self.interf.capture(AnimaBlockedWarp(self.interf))
 
+    def afxPathAttack(self, mob, atkProfile, target, path):
+        "todo: more customisation for this"
+        attackFlyer = PathAttackFlyer(self.gridPanel, path)
+        attackFlyer.register(self.interf)
+        self.interf.capture(AnimaBlockedWarp(self.interf))
+
     def requestActionWarp(self, interf):
-        return GameWindowWarp(interf)
+        return gridwarps.RequestActionWarp(interf)
 
 class AnimaBlockedWarp(warps.AnimaBlockedWarp):
     def warpArrowKey(self, vec, shift = False):
@@ -57,76 +63,6 @@ class LoadingBarFlyer(animas.Flyer):
         ren.drawText((0, 0), "-" * 25)
     def drawContents(self, ren):
         ren.drawText((0, 0), "+" * math.floor(25 * self.frac()), fg = (255, 0, 0))
-
-import actions
-class GameWindowWarp(warps.Warp):
-    @property
-    def hero(self):
-        return self.interf.state.hero
-
-    def warpArrowKey(self, vec, shift = False):
-        if vec == dirconst.IN_PLACE:
-            self.trySubmitAction( actions.Wait(self.hero) )
-        elif vec in dirconst.CARDINALS:
-            destTile = self.hero.tile.relTile(vec)
-            self.trySubmitAction( actions.ShiftStep(self.hero, destTile ))
-
-    def warpOtherKey(self, key):
-        if key == 113: # q
-            self.interf.activeWindow.debug_addLBF()
-        elif key == 119: # w
-            self.trySubmitAction(actions.TakeDamage(self.hero, 3) )
-        elif key == 101: # e
-            pass
-        elif key == 114: # r
-            pass
-        elif key == 97: # a
-            pass
-        elif key == 115: #s
-            pass
-        elif key == 100: #d
-            pass
-        elif key == 120: # x
-            self.transfer(ExamineWarp(self.interf))
-        elif key == 9: # tab
-            pass
-        else:
-            print ("Key was", key)
-
-    def trySubmitAction(self, action):
-        self.interf.release(action)
-
-    def wtransferAdvanceTime(self):
-        self.transfer(AdvanceTimeWarp(self.interf))
-#        self.interf.activeWindow.debug_addLBF()
-    def wtransferPlayerInput(self):
-        pass
-
-class ExamineWarp(warps.CursorWarp):
-    def __init__(self, interf):
-        super().__init__(interf)
-        self.cursorFlyer = ExamineCursor(self.window.gridPanel, self.state.hero.xyPos )
-
-class ExamineCursor(scions.Scion):
-    def __init__(self, parent, xyStartTile):
-        super().__init__(parent)
-        self.xyTile = xyStartTile
-        self.xyAnchor = self.parent.xyTileToNW(self.xyTile)
-
-    @property
-    def grid(self):
-        return self.parent.grid
-
-    def drawOutline(self, ren):
-        pass
-    def drawContents(self, ren):
-        ren.drawChar ((0, 0), "*")
-
-    def shift(self, vec):
-        xyNew = self.xyTile + vec
-        if self.grid.rectContains(xyNew):
-            self.xyTile = xyNew
-            self.xyAnchor = self.parent.xyTileToNW(self.xyTile)
 
 from . import scions
 import vecs, utils
@@ -158,70 +94,6 @@ class MessagePanel(scions.Panel):
     def drawContents(self, ren):
         ren.drawText( (0, 0), "messagepanel")
 
-class GridPanel(scions.Panel):
-    TILE_SPACING = 4
-    TILES_ON_GRID = 11
-    xyAnchor = (1, 1)
-    _panelSize = vecs.Vec2(43, 43)
-
-    def __init__(self, parent):
-        super().__init__(parent)
-
-        self.trMatrix = [[TileReflection(self, vecs.Vec2(x,y)) for y in range(self.TILES_ON_GRID)] for x in range(self.TILES_ON_GRID)]
-        self.children = [k for k in self.allTiles()]
-
-        self.reflect(self.ancestor.interf.state.activeZone.grid)
-
-    def reflect(self, grid):
-        self.grid = grid
-        for pos in self.allPoses():
-            self.lookup(pos).reflect(self.grid.lookup(pos))
-
-    @property
-    def xyTileSize(self):
-        return vecs.Vec2(self.TILES_ON_GRID, self.TILES_ON_GRID)
-    def allPoses(self):
-        return utils.allPoses((0,0), self.xyTileSize)
-    def allTiles(self):
-        for pos in self.allPoses():
-            yield self.lookup(pos)
-    def lookup(self, xyPos):
-        if self.rectContains(xyPos):
-            return self.trMatrix[xyPos[0]][xyPos[1]]
-        else:
-            return None
-    def rectContains(self, xyPos):
-        return utils.rectContains(((0,0), self.xyTileSize), xyPos)
-
-    def drawContents(self, ren):
-        ren.drawText( (0, 0), "gridpanel")
-
-    def xyTileToNW(self, xyTile):
-        return (xyTile * self.TILE_SPACING)
-    def xyTileToCenter(self, xyTile):
-        return self.xyTileToNW(xyTile) + (1, 1)
-
-class TileReflection(scions.Panel):
-    _panelSize = vecs.Vec2(3, 3)
-
-    def __init__(self, parent, xyTile):
-        super().__init__(parent)
-        self.xyTile = xyTile
-        self.xyAnchor = self.parent.xyTileToNW(xyTile)
-
-        self._reflector = None
-
-    def reflect(self, tile):
-        self._reflector = tile
-        return self
-
-    def drawContents(self, ren):
-        if self._reflector.occupant is not None:
-            ren.drawChar( (1,1), self._reflector.occupant.drawChar, fg=(255, 0, 0) )
-        else:
-            ren.drawChar( (1,1), " " )
-
-
 class CardinalShiftFlyer(animas.Flyer):
     xyAnchor = 0,0
 
@@ -245,3 +117,26 @@ class CardinalShiftFlyer(animas.Flyer):
         stepIndex = math.floor(self.frac() * self.parent.TILE_SPACING+1)
 
         ren.drawChar(self.drawStepPoses[stepIndex], "@", fg = (255, 255, 0))
+
+class PathAttackFlyer(animas.Flyer):
+    stepMS = 120
+
+    def __init__(self, parent, path):
+        super().__init__(parent)
+        self.pathTiles = path
+        self.xyPathPoses = [tile.xyPos for tile in self.pathTiles]
+
+        self.xyDrawPoses = []
+        for (xySource, xyDest) in zip( self.xyPathPoses[:-1], self.xyPathPoses[1:] ):
+            vec = xyDest - xySource
+            self.xyDrawPoses += [self.parent.xyTileToCenter(xySource) + (vec * k) for k in range(self.parent.TILE_SPACING)]
+
+        self.xyDrawPoses = self.xyDrawPoses + [self.parent.xyTileToCenter(self.xyPathPoses[-1])]
+
+        self.maxMS = self.stepMS * (len(self.pathTiles)-1)
+
+    def drawContents(self, ren):
+        for k, xyDraw in enumerate(self.xyDrawPoses):
+            ren.drawChar( xyDraw, "o", fg=(0, 0, 255))
+            if k/len(self.xyDrawPoses) > self.frac():
+                break
