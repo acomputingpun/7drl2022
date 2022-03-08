@@ -119,7 +119,8 @@ class CardinalShiftFlyer(animas.Flyer):
         ren.drawChar(self.drawStepPoses[stepIndex], "@", fg = (255, 255, 0))
 
 class PathAttackFlyer(animas.Flyer):
-    stepMS = 120
+    stepMS = 15
+    tailLength = 8
 
     def __init__(self, parent, path):
         super().__init__(parent)
@@ -133,13 +134,28 @@ class PathAttackFlyer(animas.Flyer):
 
         self.xyDrawPoses = self.xyDrawPoses + [self.parent.xyTileToCenter(self.xyPathPoses[-1])]
 
-        self.blockingMS = self.maxMS = self.stepMS * (len(self.pathTiles)-1)
+        self.blockingMS = self.stepMS * len(self.xyDrawPoses)
+        self.maxMS = self.stepMS * (len(self.xyDrawPoses) + self.tailLength)
 
     def drawContents(self, ren):
+        pathHeadIndex = self.pathHeadIndex()
+
         for k, xyDraw in enumerate(self.xyDrawPoses):
-            ren.drawChar( xyDraw, "o", fg=(0, 0, 255))
-            if k/len(self.xyDrawPoses) > self.frac():
+            headDist = pathHeadIndex - k
+
+            if headDist < 0:
                 break
+            elif headDist < 2:
+                glow = 1
+            elif headDist < self.tailLength:
+                glow = 1/(headDist / 2)
+            else:
+                continue    
+
+            ren.drawChar( xyDraw, "o", fg= utils.interp3( (0, 0, 128), glow, (128, 128, 255)) )
+
+    def pathHeadIndex(self):
+        return self.MS() / self.stepMS
 
 class DamageNumberFlyer(animas.Flyer):
     xyAnchor = (1,1)

@@ -8,7 +8,7 @@ class GridPanel(scions.Panel):
     xyAnchor = (1, 1)
     _panelSize = vecs.Vec2(43, 43)
 
-    NUM_TILE_REDRAW_GROUPS = 8
+    NUM_TILE_REDRAW_GROUPS = 7
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -28,6 +28,8 @@ class GridPanel(scions.Panel):
                 redrawGroupIDs = [k for k in range(self.NUM_TILE_REDRAW_GROUPS)] 
                 random.shuffle(redrawGroupIDs)
             tile.redrawGroup = redrawGroupIDs[tileIndex % self.NUM_TILE_REDRAW_GROUPS]
+
+            tile.resetGlowValue()
 
     def drawChildren(self, ren):
         self.curRedrawGroupID = (self.curRedrawGroupID + 1) % self.NUM_TILE_REDRAW_GROUPS
@@ -80,9 +82,12 @@ class TileReflection(scions.Panel):
         self._reflector = tile
         return self
 
+    def resetGlowValue(self):
+        self.savedGlowValue = 0.03 * self.parent.tileGlowAnima.sawtoothFrac()
+
     def drawOutline(self, ren):
         if self.parent.curRedrawGroupID == self.redrawGroup:
-            self.savedGlowValue = 0.05 * self.parent.tileGlowAnima.sawtoothFrac()
+            self.resetGlowValue()
 
         baseBG = self._reflector.terrain.displayBG
         baseFG = self._reflector.terrain.displayFG
