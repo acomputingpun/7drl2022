@@ -1,6 +1,7 @@
 import vecs, dirconst
-from . import warps, gridpanels
 import actions, attacks
+from .. import warps
+from . import cursors, base
 
 class GameWindowWarp(warps.Warp):
     @property
@@ -37,11 +38,8 @@ class RequestActionWarp(GameWindowWarp):
             self.transfer(AttackWarp(self.interf, attacks.StubBullet()))
         elif key == 120: # x
             self.transfer(ExamineWarp(self.interf))
-        elif key == 9: # tab
-            pass
         else:
             print ("Key was", key)
-
 
 class CursorWarp(GameWindowWarp):
     def onTransferFrom(self, other):
@@ -50,26 +48,36 @@ class CursorWarp(GameWindowWarp):
         self.window.gridPanel.children.remove(self.cursorFlyer)
 
     def warpArrowKey(self, vec, shift = False):
-        self.cursorFlyer.shift(vec)
+        if self.cursorFlyer.shift(vec):
+            self.refreshCursorData()
     def warpCancelKey(self):
         self.transfer(self.window.requestActionWarp(self.interf))
+    def warpTabKey(self):
+        if self.cursorFlyer.jumpToNextTab():
+            self.refreshCursorData()
 
     def cursorTile(self):
         return self.cursorFlyer.tile
+    def refreshCursorData(self):
+        pass
 
 class ExamineWarp(CursorWarp):
     def __init__(self, interf):
         super().__init__(interf)
-        self.cursorFlyer = gridpanels.ExamineCursor(self.window.gridPanel, self.state.hero.xyPos )
+        self.cursorFlyer = cursors.ExamineCursor(self.window.gridPanel, self.state.hero.xyPos ) # tabPoses = ["todo: get interesting nearby poses"]
 
     def warpSelectKey(self):
         pass
+    def refreshCursorData(self):
+        for item in self.cursorTile.listContents():
+            pass
 
 class AttackWarp(CursorWarp):
     def __init__(self, interf, atkProfile):
         super().__init__(interf)
-        self.cursorFlyer = gridpanels.SelectAttackCursor(self.window.gridPanel, self.state.hero.xyPos )
-        self.zoneOverlay = gridpanels.ZoneOverlay( self.window.gridPanel, atkProfile.inRangePosesFrom(self.state.hero.xyPos) )
+        self.cursorFlyer = cursors.SelectAttackCursor(self.window.gridPanel, self.state.hero.xyPos ) # tabPoses = ["todo: get enemy poses"]
+        self.zoneOverlay = base.AnimatedZoneOverlay( self.window.gridPanel, atkProfile.inRangePosesFrom(self.state.hero.xyPos), self.state.hero.xyPos )
+        self.zoneOverlay.register(interf)
 
     def onTransferFrom(self, other):
         self.window.gridPanel.children.append(self.cursorFlyer)

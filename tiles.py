@@ -20,6 +20,11 @@ class Tile():
     def relTile(self, vec):
         return self.grid.lookup(self.xyPos+vec)
 
+    def listContents(self):
+        if self.occupant is not None:
+            yield self.occupant
+        return
+
     def __repr__(self):
         return ("t{}".format(self.xyPos))
 

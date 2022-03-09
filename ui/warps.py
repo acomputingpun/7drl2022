@@ -71,6 +71,8 @@ class Warp():
         elif key == 1073741906: #up arrow
             self.warpArrowKey(dirconst.N, shift)
 
+        elif key == 9: # TAB
+            self.warpTabKey()
         elif key == 27: # ESC
             self.warpCancelKey()
         elif key == 13: # ENTER
@@ -86,6 +88,8 @@ class Warp():
     def warpSelectKey(self):
         pass
     def warpCancelKey(self):
+        pass
+    def warpTabKey(self):
         pass
     def warpOtherKey(self, key):
         print ("Key was", key)

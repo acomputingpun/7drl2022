@@ -8,4 +8,3 @@ class MainMenuWindow(Window):
         mn.menuItems = [menus.MenuItem("abcdef", "a")]
 
         self.children = []
-#        self.children = [ menus.MenuPanel(mn), gridpanels.GridPanel(self, interf.state.level.grid) ]

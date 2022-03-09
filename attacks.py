@@ -21,7 +21,7 @@ class BumpAttack(AttackProfile):
 
 class StubBeam(AttackProfile):
     baseRange = 0
-    linearRange = 4
+    linearRange = 5
 
 class StubBullet(AttackProfile):
     baseRange = 3

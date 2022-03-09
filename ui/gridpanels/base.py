@@ -1,11 +1,13 @@
-from . import scions, animas
 import vecs, utils, dirconst
+from .. import scions, animas
+from . import flyers
+
 import random
 
 class GridPanel(scions.Panel):
     TILE_SPACING = 4
     TILES_ON_GRID = 11
-    xyAnchor = (1, 1)
+    xyAnchor = (1, 6)
     _panelSize = vecs.Vec2(43, 43)
 
     NUM_TILE_REDRAW_GROUPS = 7
@@ -57,28 +59,29 @@ class GridPanel(scions.Panel):
         return utils.rectContains(((0,0), self.xyTileSize), xyPos)
 
     def drawContents(self, ren):
-        ren.drawText( (0, 0), "gridpanel")
+        for xyDraw in utils.range2(self.panelSize):
+            ren.drawChar( xyDraw, "?", fg = (30, 60, 30), bg = (0, 20, 0) )
 
-    def xyTileToNW(self, xyTile):
+    def posToNWDraw(self, xyTile):
         return (xyTile * self.TILE_SPACING)
-    def xyTileToCenter(self, xyTile):
-        return vecs.Vec2(1, 1) + self.xyTileToNW(xyTile)
+    def posToCenterDraw(self, xyTile):
+        return vecs.Vec2(1, 1) + self.posToNWDraw(xyTile)
 
     def pathToDraws(self, pathPoses):
         xyDraws = []
 
         for (pathSource, pathDest) in zip( pathPoses[:-1], pathPoses[1:] ):
             vec = pathDest - pathSource
-            xyDraws += [self.xyTileToCenter(pathSource) + (vec * k) for k in range(self.TILE_SPACING)]
+            xyDraws += [self.posToCenterDraw(pathSource) + (vec * k) for k in range(self.TILE_SPACING)]
 
-        xyDraws.append (self.xyTileToCenter(pathPoses[-1]))
+        xyDraws.append (self.posToCenterDraw(pathPoses[-1]))
         return xyDraws
 
 
     def zoneToTileDraws(self, zonePoses):
         xyDraws = []
         for zonePos in zonePoses:
-            zpDraw = self.xyTileToCenter(zonePos)
+            zpDraw = self.posToCenterDraw(zonePos)
             xyDraws = xyDraws + [vec+zpDraw for vec in dirconst.NONAGONALS]
         return xyDraws
 
@@ -86,7 +89,7 @@ class GridPanel(scions.Panel):
         zpSet = set(zonePoses)
         xyDraws = []
         for zonePos in zpSet:
-            zpDraw = self.xyTileToCenter(zonePos)
+            zpDraw = self.posToCenterDraw(zonePos)
 
             for diag in dirconst.DIAGONALS:
                 if zonePos + diag not in zpSet:
@@ -103,7 +106,7 @@ class GridPanel(scions.Panel):
         zpSet = set(zonePoses)
         xyDraws = set()
         for zonePos in zpSet:
-            zpDraw = self.xyTileToCenter(zonePos)
+            zpDraw = self.posToCenterDraw(zonePos)
 
             for diag in dirconst.DIAGONALS:
                 if (zonePos + diag in zpSet) and (zonePos + (diag.x, 0) in zpSet) and (zonePos + (0, diag.y) in zpSet):
@@ -117,13 +120,28 @@ class GridPanel(scions.Panel):
         return [k for k in xyDraws]
 
 
+
+
+    def afxShiftStep(self, mob, destTile):
+        shiftFlyer = flyers.CardinalShiftFlyer(self, mob.tile, destTile)
+        shiftFlyer.register(self.interf)
+
+    def afxDamageNumber(self, mob, damage):
+        damageFlyer = flyers.DamageNumberFlyer(self.lookup(mob.tile.xyPos), damage)
+        damageFlyer.register(self.interf)
+
+    def afxPathAttack(self, mob, atkProfile, target, path):
+        "todo: more customisation for this"
+        attackFlyer = flyers.PathAttackFlyer(self, path)
+        attackFlyer.register(self.interf)
+
 class TileReflection(scions.Panel):
     _panelSize = vecs.Vec2(3, 3)
 
     def __init__(self, parent, xyTile):
         super().__init__(parent)
         self.xyTile = xyTile
-        self.xyAnchor = self.parent.xyTileToNW(xyTile)
+        self.xyAnchor = self.parent.posToNWDraw(xyTile)
 
         self._reflector = None
         self.children = []
@@ -158,70 +176,6 @@ class TileReflection(scions.Panel):
             pass
 #            ren.drawChar( (1,1), " " )
 
-class GridCursor(scions.Scion):
-    fgDebug = (255, 255, 255)
-    xyAnchor = (0, 0)
-
-    def __init__(self, parent, xyStartTile):
-        super().__init__(parent)
-        self.xyTile = self.xyStartTile = xyStartTile
-    @property
-    def grid(self):
-        return self.parent.grid
-
-    def drawOutline(self, ren):
-        pass
-    def drawContents(self, ren):
-        xyDraw = self.parent.xyTileToNW(self.xyTile)
-
-        ren.drawChar (xyDraw+(0, 0), "*", fg = self.fgDebug)
-        ren.drawChar (xyDraw+(2, 0), "*", fg = self.fgDebug)
-        ren.drawChar (xyDraw+(0, 2), "*", fg = self.fgDebug)
-        ren.drawChar (xyDraw+(2, 2), "*", fg = self.fgDebug)
-
-    def shift(self, vec):
-        xyNew = self.xyTile + vec
-        self.jumpTo(xyNew)
-
-    def jumpTo(self, xyNew):
-        if self.grid.rectContains(xyNew):
-            self.xyTile = xyNew
-
-    @property
-    def tile(self):
-        return self.grid.lookup(self.xyTile)
-
-class TrailCursor(GridCursor):
-    xyAnchor = (0, 0)
-
-    def __init__(self, parent, xyStartTile):
-        super().__init__(parent, xyStartTile)
-        self.xyPathNodes = [self.xyStartTile]
-
-    def shift(self, vec):
-        xyNew = self.xyTile + vec
-        if self.grid.rectContains(xyNew):
-            self.xyTile = xyNew
-
-            if xyNew in self.xyPathNodes:
-                self.xyPathNodes = self.xyPathNodes[: self.xyPathNodes.index(xyNew)+1]
-            else:
-                self.xyPathNodes.append(xyNew)
-
-    def drawContents(self, ren):
-        for xyPathNode in self.xyPathNodes:
-            ren.drawChar( self.parent.xyTileToCenter(xyPathNode), "!", fg = self.fgDebug )
-        super().drawContents(ren)
-
-    def pathTiles(self):
-        return [self.grid.lookup(xyPathNode) for xyPathNode in self.xyPathNodes]
-
-class ExamineCursor(GridCursor):
-    fgDebug = (255, 255, 0)
-
-class SelectAttackCursor(TrailCursor):
-    fgDebug = (255, 0, 0)
-
 
 class ZoneOverlay(scions.Scion):
     bgDebug = (255, 255, 255)
@@ -232,8 +186,6 @@ class ZoneOverlay(scions.Scion):
         self.innerDraws = self.parent.zoneToTileDraws(zonePoses) + self.parent.zoneToGutterDraws(zonePoses)
         self.outlineDraws = self.parent.zoneToOutlineDraws(zonePoses)
 
-#        print ("innerDraws", self.innerDraws, "outlineDraws", self.outlineDraws)
-
     def drawOutline(self, ren):
         for xyDraw in self.outlineDraws:
             ren.drawChar( xyDraw, "#" )
@@ -241,3 +193,31 @@ class ZoneOverlay(scions.Scion):
     def drawContents(self, ren):
         for xyDraw in self.innerDraws:
             ren.drawChar( xyDraw, "z" )
+
+class AnimatedZoneOverlay(ZoneOverlay, animas.Anima):
+    stepMS = 25
+    blockingMS = 0
+
+    def __init__(self, parent, zonePoses, zoneSourcePos):
+        super().__init__(parent, zonePoses)
+        self.xySourceDraw = self.parent.posToCenterDraw(zoneSourcePos)
+        self.maxMS = self.stepMS * self.parent.TILE_SPACING * (max( utils.distMan(zonePos, zoneSourcePos) for zonePos in zonePoses) + 2)
+
+    def drawOutline(self, ren):
+        for xyDraw in self.outlineDraws:
+
+            if utils.distMan( xyDraw, self.xySourceDraw ) < self.MS()/self.stepMS:
+                ren.drawChar( xyDraw, "#" )
+
+    def drawContents(self, ren):
+        headDist = self.growHeadDist()
+
+        for xyDraw in self.innerDraws:
+            drawDist = utils.distMan( xyDraw, self.xySourceDraw )
+            fromHeadDist = headDist - drawDist
+
+            if 5 > fromHeadDist > 0:
+                ren.drawChar( xyDraw, "z" )
+
+    def growHeadDist(self):
+        return (self.MS() / self.stepMS)

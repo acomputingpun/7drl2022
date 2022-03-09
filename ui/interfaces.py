@@ -7,7 +7,7 @@ class Interface():
     def __init__(self, intModule, state):
         self.state = state
 
-        self.ren = intModule.Renderer(80, 60)
+        self.ren = intModule.Renderer(75, 50)
         self.eventHandler = intModule.EventHandler()
 
         self.sysTimer = timing.SlaveTimer(intModule.SystemTimer())
