@@ -4,6 +4,8 @@ from . import flyers, warps
 
 import random
 
+DEBUG_FLAT_COLOURS = False
+
 class GridPanel(scions.Panel):
     TILE_SPACING = 4
     TILES_ON_GRID = 11
@@ -17,6 +19,7 @@ class GridPanel(scions.Panel):
 
         self.trMatrix = [[TileReflection(self, vecs.Vec2(x,y)) for y in range(self.TILES_ON_GRID)] for x in range(self.TILES_ON_GRID)]
         self.children = [k for k in self.allTiles()]
+        self.setupGutters()
 
         self.reflect(self.ancestor.interf.state.activeZone.grid)
 
@@ -27,6 +30,17 @@ class GridPanel(scions.Panel):
         self.curRedrawGroupID = 0
         self.setupTileRedrawGroups()
 
+    def setupGutters(self):
+        for tile in self.allTiles():
+            xLess = (tile.xyTile.x) < self.TILES_ON_GRID-1
+            yLess = (tile.xyTile.y) < self.TILES_ON_GRID-1
+            if xLess:
+                tile.children.append(HGutter(tile))
+            if yLess:
+                tile.children.append(VGutter(tile))
+            if xLess and yLess:
+                tile.children.append(XGutter(tile))
+
     def setupTileRedrawGroups(self):
         for (tileIndex, tile) in enumerate(self.allTiles()):
             if tileIndex % self.NUM_TILE_REDRAW_GROUPS == 0:
@@ -34,11 +48,13 @@ class GridPanel(scions.Panel):
                 random.shuffle(redrawGroupIDs)
             tile.redrawGroup = redrawGroupIDs[tileIndex % self.NUM_TILE_REDRAW_GROUPS]
 
-            tile.resetGlowValue()
+            tile.resetDrawColours()
 
     def drawChildren(self, ren):
         self.curRedrawGroupID = (self.curRedrawGroupID + 1) % self.NUM_TILE_REDRAW_GROUPS
+#        self.D_rdgs = 0
         super().drawChildren(ren)
+#        print ("redrawn (w/ TRGs)", self.curRedrawGroupID, "num", self.D_rdgs)
 
     def reflect(self, grid):
         self.grid = grid
@@ -62,8 +78,13 @@ class GridPanel(scions.Panel):
         return utils.rectContains(((0,0), self.xyTileSize), xyPos)
 
     def drawContents(self, ren):
-        for xyDraw in utils.range2(self.panelSize):
-            ren.drawChar( xyDraw, "?", fg = (30, 60, 30), bg = (0, 20, 0) )
+        self.drawGutters(ren)
+
+    def drawGutters(self, ren):
+        pass
+#        for xyDraw in utils.range2(self.panelSize):
+#            ren.drawChar( xyDraw, "?", fg = (30, 60, 30), bg = (0, 20, 0) )
+
 
     def posToNWDraw(self, xyTile):
         return (xyTile * self.TILE_SPACING)
@@ -139,7 +160,7 @@ class GridPanel(scions.Panel):
         return warps.RequestActionWarp(interf)
 
 class ColourWave(animas.Anima):
-    maxMS = 10000
+    maxMS = 9000
     frontWidth = 4
 
     def __init__(self, parent, sourceColour, motionVec, destColour):
@@ -149,7 +170,7 @@ class ColourWave(animas.Anima):
         self.destColour = destColour
         
     def posToLinearDist(self, xyPos):
-        return self.motionVec.dMul( xyPos ) * (-1 if self.motionVec.x <= 0 else 1)
+        return self.motionVec.dMul( xyPos ) 
     def linearHeadPos(self):
         return (self.frac()*18)-9
     def posToHeadDist(self, xyPos):
@@ -175,7 +196,7 @@ class ColourWave(animas.Anima):
 import random
 class RandomColourWave(ColourWave):
     def __init__(self, parent, sourceColour = colours.randomDisco( 120, 20 ) ):
-        super().__init__(parent, sourceColour, dirconst.N.rotAng(random.uniform(0, math.pi)), colours.randomDisco( 120, 20 ) )
+        super().__init__(parent, sourceColour, dirconst.N.rotAng(random.uniform(0, 2*math.pi)), colours.randomDisco( 120, 20 ) )
 
 class TileReflection(scions.Panel):
     _panelSize = vecs.Vec2(3, 3)
@@ -190,29 +211,40 @@ class TileReflection(scions.Panel):
 
         self.redrawGroup = 0
         self.savedGlowValue = 0
+        self.savedGlowValue = (0, 0, 0)
+
+        self.drawBG = (0, 0, 0)
+        self.drawFG = (0, 0, 0)
 
     def reflect(self, tile):
         self._reflector = tile
         return self
 
-    def resetGlowValue(self):
-        self.savedGlowValue = 0.1 + (0.04 * self.parent.tileGlowAnima.sineFrac())
+    def resetDrawColours(self):
+        self.savedGlowValue = (0.03 * self.parent.tileGlowAnima.sawtoothFrac())
         self.savedColourShift = self.parent.colourWaveAnima.colourShiftAt(self.xyTile - vecs.Vec2(5,5))
-
-    def drawOutline(self, ren):
-        if self.parent.curRedrawGroupID == self.redrawGroup:
-            self.resetGlowValue()
 
         baseBG = self._reflector.terrain.displayBG
         baseFG = self._reflector.terrain.displayFG
 
-        glowBG = utils.interp3( baseBG, self.savedGlowValue, (255, 255, 255) )
-        glowFG = utils.interp3( baseFG, self.savedGlowValue, (255, 255, 255) )
+        if not DEBUG_FLAT_COLOURS:
+            glowBG = utils.interp3( baseBG, self.savedGlowValue, (255, 255, 255) )
+            glowFG = utils.interp3( baseFG, self.savedGlowValue, (255, 255, 255) )
 
-        shiftBG = utils.interp3( glowBG, 0.3, self.savedColourShift )
+            shiftBG = utils.interp3( glowBG, 0.2, self.savedColourShift )
 
+            self.drawBG = shiftBG
+            self.drawFG = glowFG
+        else:
+            self.drawBG = baseBG
+            self.drawFG = baseFG
+
+    def drawOutline(self, ren):
+        if self.parent.curRedrawGroupID == self.redrawGroup:
+            self.resetDrawColours()
+#            self.parent.D_rdgs += 1
         for xy in utils.range2(self.panelSize):
-            ren.drawChar( xy, self._reflector.displayChar, fg = glowFG, bg = shiftBG )
+            ren.drawChar( xy, self._reflector.displayChar, fg = self.drawFG, bg = self.drawBG )
 
     def drawContents(self, ren):
         if self._reflector.occupant is not None:
@@ -220,6 +252,51 @@ class TileReflection(scions.Panel):
         else:
             pass
 #            ren.drawChar( (1,1), " " )
+
+    def relTile(self, vec):
+        return self.parent.lookup(self.xyTile + vec)
+
+class Gutter(scions.Scion):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.otherTile = self.parent.relTile(self.spanVec)
+    def drawOutline(self, ren):
+        baseBG = utils.interp3( self.parent.drawBG, 0.5, self.otherTile.drawBG )
+        shiftBG = utils.interp3( baseBG, 0.25, (0, 0, 0) )
+
+        for drawVec in self.xyDraws:
+            ren.drawChar( drawVec, self.displayChar, bg=shiftBG, fg = baseBG )
+    def drawContents(self, ren):
+        pass
+
+class VGutter(Gutter):
+    spanVec = dirconst.S
+    xyAnchor = vecs.Vec2(0, 3)
+    xyDraws = [ (0, 0), (1, 0), (2, 0) ]
+    displayChar = '-'
+class HGutter(Gutter):
+    spanVec = dirconst.E
+    xyAnchor = vecs.Vec2(3, 0)
+    xyDraws = [ (0, 0), (0, 1), (0, 2) ]
+    displayChar = '|'
+
+class XGutter(scions.Scion):
+    xyAnchor = vecs.Vec2(3, 3)
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.nwTile = self.parent
+        self.neTile = self.parent.relTile(dirconst.E)
+        self.seTile = self.parent.relTile(dirconst.SE)
+        self.swTile = self.parent.relTile(dirconst.S)
+
+    def drawOutline(self, ren):
+        baseBG = utils.interp3( self.nwTile.drawBG, 0.5, self.seTile.drawBG )
+        shiftBG = utils.interp3( baseBG, 0.25, (0, 0, 0) )
+        ren.drawChar( (0, 0), '+', bg=shiftBG, fg = baseBG )
+
+    def drawContents(self, ren):
+        pass        
 
 class ZoneOverlay(scions.Scion):
     bgDebug = (255, 255, 255)

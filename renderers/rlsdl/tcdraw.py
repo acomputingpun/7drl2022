@@ -3,6 +3,11 @@ import sdl2, sdl2.ext, ctypes
 import os
 import utils
 
+DEBUG_ALWAYS_COMPUTE = False
+
+DEBUG_COLUMN_FLICKER = True
+DEBUG_PRINT_DRAWS = False
+
 class EventHandler():
     def warpEvents(self, warp):
         event = sdl2.SDL_Event()
@@ -38,6 +43,8 @@ class Renderer():
 
         self.xyOffset = (0,0)
         self.zLevel = 0
+
+        self.columnFlickerIndex = 0
 
         self.setup()
 
@@ -134,9 +141,12 @@ class Renderer():
     def flush(self):
         D_fDraws = 0
         D_cDraws = 0
+
+        self.columnFlickerIndex = (self.columnFlickerIndex + 1) % self.xSize
+
         for y in range(self.ySize):
             for x in range(self.xSize):
-                if self.computeDirty[x][y]:
+                if DEBUG_ALWAYS_COMPUTE or self.computeDirty[x][y]:
                     D_cDraws += 1
                     self.computeDirty[x][y] = False
 
@@ -153,8 +163,11 @@ class Renderer():
                         drawDirty = True
                         self.bgMatrixPrev[x][y] = dBG
 
-                    if drawDirty:
+                    if drawDirty or (DEBUG_COLUMN_FLICKER and x == self.columnFlickerIndex):
                         D_fDraws += 1
+                        if DEBUG_PRINT_DRAWS:
+                            print ("- drawing at ({}, {}), char: '{}' ".format(x, y, self.charMatrix[x][y]))
+
                         if self.charMatrixPrev[x][y] < 0:
                             sourceRect = self.intMap[-self.charMatrix[x][y]]
                         else:
@@ -170,7 +183,7 @@ class Renderer():
         sdl2.SDL_RenderPresent(self.rcon);
         self.zBuffer = [[0 for y in range(self.ySize)] for x in range(self.xSize)]
         self.zLevel = 0
-#        print ("Drawn with {} fDraws / {} cDraws".format(D_fDraws, D_cDraws))
+        print ("Drawn with {} fDraws / {} cDraws".format(D_fDraws, D_cDraws))
 
     def forceQuit(self):
         exit()

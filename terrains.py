@@ -20,5 +20,7 @@ class Floor(Terrain):
     blocksMovement = False
 
 class Wall(Terrain):
+    displayFG = (200, 200, 200)
+
     displayChar = "#"
     blocksMovement = True

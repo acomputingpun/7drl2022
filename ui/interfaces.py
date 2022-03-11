@@ -2,7 +2,7 @@ import timing, vecs
 from . import gamewindows
 
 class Interface():
-    _debugText = "debug"
+    _debugText = ""
 
     def __init__(self, intModule, state):
         self.state = state
