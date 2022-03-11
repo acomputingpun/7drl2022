@@ -20,7 +20,7 @@ class Renderer():
         sdl2.ext.init()
         self.window = sdl2.SDL_CreateWindow(b"7DRL 2022!",
                                             sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED,
-                                            1200, 800, sdl2.SDL_WINDOW_SHOWN)
+                                            xSize * GLYPH_X, ySize * GLYPH_Y, sdl2.SDL_WINDOW_SHOWN)
         self.rcon = sdl2.SDL_CreateRenderer(self.window, -1, 0)
 #        self.con = sdl2.SDL_GetWindowSurface(self.window)
 
@@ -38,6 +38,8 @@ class Renderer():
 
         self.xyOffset = (0,0)
         self.zLevel = 0
+
+#        self.texCache = {}
 
         self.setup()
 
@@ -131,16 +133,18 @@ class Renderer():
                 if self.computeDirty[x][y]:
                     self.computeDirty[x][y] = False
 
+                    (dChar, dFG, dBG) = (self.charMatrix[x][y], self.fgMatrix[x][y], self.bgMatrix[x][y])
+
                     drawDirty = False
-                    if self.charMatrix[x][y] != self.charMatrixPrev[x][y]:
+                    if dChar != self.charMatrixPrev[x][y]:
                         drawDirty = True
-                        self.charMatrixPrev[x][y] = self.charMatrix[x][y]
-                    if self.fgMatrix[x][y] != self.fgMatrixPrev[x][y]:
+                        self.charMatrixPrev[x][y] = dChar
+                    if dFG != self.fgMatrixPrev[x][y]:
                         drawDirty = True
-                        self.fgMatrixPrev[x][y] = self.fgMatrix[x][y]
-                    if self.bgMatrix[x][y] != self.bgMatrixPrev[x][y]:
+                        self.fgMatrixPrev[x][y] = dFG
+                    if dBG != self.bgMatrixPrev[x][y]:
                         drawDirty = True
-                        self.bgMatrixPrev[x][y] = self.bgMatrix[x][y]
+                        self.bgMatrixPrev[x][y] = dBG
 
                     if drawDirty:
                         if self.charMatrixPrev[x][y] < 0:

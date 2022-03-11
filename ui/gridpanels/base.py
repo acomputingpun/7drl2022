@@ -7,7 +7,7 @@ import random
 class GridPanel(scions.Panel):
     TILE_SPACING = 4
     TILES_ON_GRID = 11
-    xyAnchor = (1, 6)
+    xyAnchor = (1, 8)
     _panelSize = vecs.Vec2(43, 43)
 
     NUM_TILE_REDRAW_GROUPS = 7
@@ -76,7 +76,6 @@ class GridPanel(scions.Panel):
 
         xyDraws.append (self.posToCenterDraw(pathPoses[-1]))
         return xyDraws
-
 
     def zoneToTileDraws(self, zonePoses):
         xyDraws = []
@@ -167,11 +166,11 @@ class TileReflection(scions.Panel):
         glowFG = utils.interp3( baseFG, self.savedGlowValue, (255, 255, 255) )
 
         for xy in utils.range2(self.panelSize):
-            ren.drawChar( xy, ".", fg = glowFG, bg = glowBG )
+            ren.drawChar( xy, self._reflector.displayChar, fg = glowFG, bg = glowBG )
 
     def drawContents(self, ren):
         if self._reflector.occupant is not None:
-            ren.drawChar( (1,1), self._reflector.occupant.drawChar, fg=(255, 0, 0) )
+            ren.drawChar( (1,1), self._reflector.occupant.displayChar, fg=(255, 0, 0) )
         else:
             pass
 #            ren.drawChar( (1,1), " " )

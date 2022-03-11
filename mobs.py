@@ -1,7 +1,7 @@
 import actions, actors, rsignals, tiles
 
 class Mob(tiles.Occupant, actors.Actor):
-    drawChar = "m"
+    displayChar = "m"
 
     def __init__(self, roller):
         super().__init__()

@@ -14,6 +14,8 @@ class AttackProfile():
 
     def inRangePosesFrom(self, xyPos):
         return [ xyPos + rel for rel in self._inRangePoses() ]
+    def inRangeTilesFrom(self, tile):
+        return [ tile.relTile(rel) for rel in self._inRangePoses() if tile.relTile(rel) is not None ]
 
 class BumpAttack(AttackProfile):
     baseRange = 1

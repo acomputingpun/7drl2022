@@ -1,3 +1,5 @@
+import utils
+
 class Scion():
     children = tuple()
     parent = None
@@ -47,6 +49,17 @@ class Panel(Scion):
     @property
     def panelSize(self):
         return self._panelSize
+    def allDraws(self):
+        return utils.range2(self.panelSize)
+
+    def outlineDraws(self):
+        for x in range(self.panelSize.x):
+            yield (x, 0)
+            yield (x, self.panelSize.y-1)
+
+        for y in range(self.panelSize.y):
+            yield (0, y)
+            yield (self.panelSize.x-1, y)
 
 class Flyer(Scion):
     def drawOutline(self, ren):

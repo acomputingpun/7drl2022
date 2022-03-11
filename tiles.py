@@ -25,6 +25,16 @@ class Tile():
             yield self.occupant
         return
 
+    def setTerrain(self, terrainClass, *params):
+        self.terrain = terrainClass(self, *params)
+
+    @property
+    def displayChar(self):
+        if self.terrain is not None:
+            return self.terrain.displayChar
+        else:
+            return "."
+
     def __repr__(self):
         return ("t{}".format(self.xyPos))
 

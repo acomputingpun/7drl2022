@@ -21,7 +21,7 @@ class RequestActionWarp(GameWindowWarp):
 
     def warpOtherKey(self, key):
         if key == 113: # q
-            self.interf.activeWindow.debug_addLBF()
+            self.interf.activeWindow.debug_postMessage()
         elif key == 119: # w
             self.trySubmitAction(actions.TakeDamage(self.hero, 3) )
         elif key == 101: # e
@@ -61,10 +61,18 @@ class CursorWarp(GameWindowWarp):
     def refreshCursorData(self):
         pass
 
+    def getTabPoses(self):
+        return []
+
 class ExamineWarp(CursorWarp):
     def __init__(self, interf):
         super().__init__(interf)
-        self.cursorFlyer = cursors.ExamineCursor(self.window.gridPanel, self.state.hero.xyPos ) # tabPoses = ["todo: get interesting nearby poses"]
+        self.cursorFlyer = cursors.ExamineCursor(self.window.gridPanel, self.state.hero.xyPos, [k for k in self.getTabPoses()] )
+
+    def getTabPoses(self):
+        for tile in self.state.grid.allTiles():
+            if len([*tile.listContents()]) > 0:
+                yield tile.xyPos
 
     def warpSelectKey(self):
         pass
@@ -75,9 +83,16 @@ class ExamineWarp(CursorWarp):
 class AttackWarp(CursorWarp):
     def __init__(self, interf, atkProfile):
         super().__init__(interf)
-        self.cursorFlyer = cursors.SelectAttackCursor(self.window.gridPanel, self.state.hero.xyPos ) # tabPoses = ["todo: get enemy poses"]
+        self.atkProfile = atkProfile
+
+        self.cursorFlyer = cursors.SelectAttackCursor(self.window.gridPanel, self.state.hero.xyPos, [k for k in self.getTabPoses()] )
         self.zoneOverlay = base.AnimatedZoneOverlay( self.window.gridPanel, atkProfile.inRangePosesFrom(self.state.hero.xyPos), self.state.hero.xyPos )
         self.zoneOverlay.register(interf)
+
+    def getTabPoses(self):
+        for tile in self.atkProfile.inRangeTilesFrom(self.state.hero.tile):
+            if not (tile.occupant is None or tile.occupant is self.state.hero):
+                yield tile.xyPos
 
     def onTransferFrom(self, other):
         self.window.gridPanel.children.append(self.cursorFlyer)

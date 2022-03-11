@@ -1,7 +1,7 @@
 import xchars, random
 
 class Terrain():
-    displayChar = ord("?")
+    displayChar = "?"
     displayFG = (60, 120, 60)
     displayBG = (20, 40, 20)
 
@@ -16,9 +16,9 @@ class Terrain():
         return self.tile
 
 class Floor(Terrain):
-    displayChar = ord(".")
+    displayChar = "."
     blocksMovement = False
 
 class Wall(Terrain):
-    displayChar = ord("#")
+    displayChar = "#"
     blocksMovement = True

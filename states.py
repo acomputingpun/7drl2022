@@ -1,4 +1,4 @@
-import zones, heros, actions, mobs, pseudo
+import zones, heros, actions, mobs, pseudo, terrains
 
 class State():
     def __init__(self):
@@ -10,7 +10,7 @@ class State():
         self.stubSetup()
 
     def stubSetup(self):
-        self.hero = heros.Hero()
+        self.grid.lookup( (5, 1) ).setTerrain(terrains.Wall)
 
         self.activeZone.addActor(self.hero)
         self.hero.setTile(self.activeZone.grid.lookup( (4, 4) ))
@@ -32,3 +32,7 @@ class State():
         nextActor = self.activeZone.getCurActor()
         if nextActor is not None:
             return nextActor.tryRequestAction(interf)
+
+    @property
+    def grid(self):
+        return self.activeZone.grid

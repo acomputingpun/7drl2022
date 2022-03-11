@@ -7,7 +7,7 @@ class Interface():
     def __init__(self, intModule, state):
         self.state = state
 
-        self.ren = intModule.Renderer(75, 50)
+        self.ren = intModule.Renderer(75, 52)
         self.eventHandler = intModule.EventHandler()
 
         self.sysTimer = timing.SlaveTimer(intModule.SystemTimer())
@@ -31,7 +31,7 @@ class Interface():
             self.activeWindow.draw(self.ren)
 
             self.ren.xyOffset = vecs.Vec2(0,0)
-            self.ren.drawText( (0, 0), self._debugText)
+            self.ren.drawText( (0, 49), self._debugText)
             flushMS = self.sysTimer.MS()
             self.ren.flush()
             print ("draw took", self.sysTimer.MS() - self.lastDrawMS, "(flush", self.sysTimer.MS() - flushMS, ")")
