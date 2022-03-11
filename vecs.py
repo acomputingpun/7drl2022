@@ -67,6 +67,10 @@ class Vec2(tuple):
         return Vec2(self.y, -self.x)
     def rot180(self):
         return Vec2(-self.x, -self.y)
+    def rotAng(self, ang):
+        sAng = math.sin(ang)
+        cAng = math.cos(ang)
+        return Vec2( (self[0]*cAng)-(self[1]*sAng), (self[0]*sAng)+(self[1]*cAng) )
 
 def min2(v1, v2):
     return Vec2(min(v1[0], v2[0]), min(v1[1], v2[1]))

@@ -7,11 +7,12 @@ class CardinalShiftFlyer(animas.Flyer):
     maxMS = 250
     blockingMS = 200
 
-    def __init__(self, parent, sourceTile, destTile):
+    def __init__(self, parent, mob, sourceTile, destTile):
         super().__init__(parent)
         self.sourceTile = sourceTile
         self.destTile = destTile
 
+        self.mob = mob
         self.sourceDraw = self.parent.posToCenterDraw(self.sourceTile.xyPos)
         self.destDraw = self.parent.posToCenterDraw(self.destTile.xyPos)
 
@@ -21,9 +22,8 @@ class CardinalShiftFlyer(animas.Flyer):
     def drawOutline(self, ren):
         pass
     def drawContents(self, ren):
-        stepIndex = math.floor(self.frac() * self.parent.TILE_SPACING+1)
-
-        ren.drawChar(self.drawStepPoses[stepIndex], "@", fg = (255, 255, 0))
+        stepIndex = min(math.floor(self.frac() * (self.parent.TILE_SPACING+1)), self.parent.TILE_SPACING)
+        ren.drawChar(self.drawStepPoses[stepIndex], self.mob.displayChar, self.mob.displayFG)
 
 class PathAttackFlyer(animas.Flyer):
     stepMS = 15

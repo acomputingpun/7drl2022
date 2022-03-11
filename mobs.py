@@ -1,7 +1,19 @@
 import actions, actors, rsignals, tiles
 
 class Mob(tiles.Occupant, actors.Actor):
+    displayChar = "?"
+    displayFG = (255, 0, 0)
+    displayPriorityID = 0
+    displayName = "unknown mob"
+
+    health = 10
+
+class Enemy(Mob):
     displayChar = "m"
+    displayFG = (255, 0, 0)
+    displayPriorityID = 1
+
+    displayName = "unknown enemy"
 
     def __init__(self, roller):
         super().__init__()
@@ -26,9 +38,9 @@ class WaitBrain(Brain):
 class RandomWalkBrain(Brain):
     def getNextAction(self):
         # get adjacent tiles
-        adjTiles = self.mob.tile.adjacentTiles()
+        movTiles = [tile for tile in self.mob.tile.adjacentTiles() if self.mob.canOccupy(tile) ]
 
-        if len(adjTiles) > 0:
-            return actions.ShiftStep(self.mob, self.roller.choice(adjTiles))
+        if len(movTiles) > 0:
+            return actions.ShiftStep(self.mob, self.roller.choice(movTiles))
         else:
             return actions.Wait(self.mob)

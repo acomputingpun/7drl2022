@@ -10,12 +10,12 @@ class Interface():
         self.ren = intModule.Renderer(75, 52)
         self.eventHandler = intModule.EventHandler()
 
+        self.livingAnimas = []
+        self.lastDrawMS = -1000
+
         self.sysTimer = timing.SlaveTimer(intModule.SystemTimer())
         self.activeWindow = gamewindows.GameWindow(self)
         self._activeWarp = None
-
-        self.lastDrawMS = -1000
-        self.livingAnimas = []
 
         self.sysTimer.unpause()
 

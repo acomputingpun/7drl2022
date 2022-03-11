@@ -1,6 +1,5 @@
 class Actor():
     timeslots = 1
-    health = 10
 
     def __init__(self):
         self.curAction = None

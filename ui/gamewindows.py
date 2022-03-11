@@ -2,8 +2,8 @@ import vecs, dirconst, math
 from . import warps, windows
 
 from .gridpanels import base as gridpanels
-from .gridpanels import warps as gridwarps
 from .msgpanels import base as msgpanels
+from .sidepanels import base as sidepanels
 
 class GameWindow(windows.Window):
     def __init__(self, interf):
@@ -11,7 +11,7 @@ class GameWindow(windows.Window):
 
         self.gridPanel = gridpanels.GridPanel(self)
         self.msgPanel = msgpanels.MessagePanel(self)
-        self.sidePanel = SidePanel(self)
+        self.sidePanel = sidepanels.SidePanel(self)
 
         self.children = [self.gridPanel, self.msgPanel, self.sidePanel]
 
@@ -39,9 +39,11 @@ class GameWindow(windows.Window):
         self.interf.capture(AnimaBlockedWarp(self.interf))
     def afxMessageInterrupt(self):
         self.interf.activeWarp.transfer(InputBlockedWarp(self.interf))
+    def afxPostMessage(self, message):
+        self.msgPanel.postPlaintext(message)
 
     def requestActionWarp(self, interf):
-        return gridwarps.RequestActionWarp(interf)
+        return self.gridPanel.requestActionWarp(interf)
 
 class AnimaBlockedWarp(warps.AnimaBlockedWarp):
     def warpArrowKey(self, vec, shift = False):
@@ -54,25 +56,3 @@ class InputBlockedWarp(warps.AnyKeyWarp):
         self.interruptedWarp = other
     def warpKeydown(self, key, shift = False):
         self.transfer(self.interruptedWarp)
-
-from . import scions, animas
-
-class SidePanel(scions.Panel):
-    xyAnchor = (45, 0)
-    _panelSize = vecs.Vec2(30, 50)
-
-    def __init__(self, parent):
-        super().__init__(parent)
-
-    def drawOutline(self, ren):
-        super().drawOutline(ren)
-
-        for y in range(self.panelSize.y):
-            ren.drawChar((0, y), "|" )
-
-    @property
-    def hero(self):
-        return self.interf.state.hero
-
-    def drawContents(self, ren):
-        ren.drawText( (0, 0), "sidepanel")

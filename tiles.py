@@ -70,3 +70,12 @@ class Occupant():
     @property
     def grid(self):
         return self.tile.grid
+
+    def canOccupy(self, tile):
+        if tile is None:
+            return False
+        if tile.terrain.blocksMovement:
+            return False
+        if tile.occupant is not None and tile.occupant is not self:
+            return False
+        return True

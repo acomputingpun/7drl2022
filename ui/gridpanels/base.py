@@ -1,6 +1,6 @@
-import vecs, utils, dirconst
-from .. import scions, animas
-from . import flyers
+import vecs, utils, dirconst, math
+from .. import scions, animas, colours
+from . import flyers, warps
 
 import random
 
@@ -20,7 +20,10 @@ class GridPanel(scions.Panel):
 
         self.reflect(self.ancestor.interf.state.activeZone.grid)
 
-        self.tileGlowAnima = animas.Periodic(self.interf, periodMS = 5000)
+        self.tileGlowAnima = animas.Periodic(self.interf, periodMS = 4000)
+        self.colourWaveAnima = RandomColourWave(self)
+        self.colourWaveAnima.register(self.interf)
+
         self.curRedrawGroupID = 0
         self.setupTileRedrawGroups()
 
@@ -119,10 +122,8 @@ class GridPanel(scions.Panel):
         return [k for k in xyDraws]
 
 
-
-
     def afxShiftStep(self, mob, destTile):
-        shiftFlyer = flyers.CardinalShiftFlyer(self, mob.tile, destTile)
+        shiftFlyer = flyers.CardinalShiftFlyer(self, mob, mob.tile, destTile)
         shiftFlyer.register(self.interf)
 
     def afxDamageNumber(self, mob, damage):
@@ -133,6 +134,48 @@ class GridPanel(scions.Panel):
         "todo: more customisation for this"
         attackFlyer = flyers.PathAttackFlyer(self, path)
         attackFlyer.register(self.interf)
+
+    def requestActionWarp(self, interf):
+        return warps.RequestActionWarp(interf)
+
+class ColourWave(animas.Anima):
+    maxMS = 10000
+    frontWidth = 4
+
+    def __init__(self, parent, sourceColour, motionVec, destColour):
+        self.parent = parent
+        self.motionVec = vecs.Vec2(motionVec).norm
+        self.sourceColour = sourceColour
+        self.destColour = destColour
+        
+    def posToLinearDist(self, xyPos):
+        return self.motionVec.dMul( xyPos ) * (-1 if self.motionVec.x <= 0 else 1)
+    def linearHeadPos(self):
+        return (self.frac()*18)-9
+    def posToHeadDist(self, xyPos):
+        lDist = self.posToLinearDist(xyPos)
+        return self.linearHeadPos() - lDist
+
+    def colourShiftAt(self, xyPos):
+        headDist = self.posToHeadDist(xyPos)
+        if headDist <= 0:
+            interp = 0
+        elif headDist >= self.frontWidth:
+            interp = 1
+        else:
+            interp = headDist/self.frontWidth
+        return utils.interp3( self.sourceColour, interp, self.destColour )
+
+    def fastUpkeep(self, interf):
+        if self.frac() >= 1:
+            self.deregister(interf)
+            self.parent.colourWaveAnima = RandomColourWave( self.parent, self.destColour )
+            self.parent.colourWaveAnima.register(interf)
+
+import random
+class RandomColourWave(ColourWave):
+    def __init__(self, parent, sourceColour = colours.randomDisco( 120, 20 ) ):
+        super().__init__(parent, sourceColour, dirconst.N.rotAng(random.uniform(0, math.pi)), colours.randomDisco( 120, 20 ) )
 
 class TileReflection(scions.Panel):
     _panelSize = vecs.Vec2(3, 3)
@@ -153,7 +196,8 @@ class TileReflection(scions.Panel):
         return self
 
     def resetGlowValue(self):
-        self.savedGlowValue = 0.03 * self.parent.tileGlowAnima.sawtoothFrac()
+        self.savedGlowValue = 0.1 + (0.04 * self.parent.tileGlowAnima.sineFrac())
+        self.savedColourShift = self.parent.colourWaveAnima.colourShiftAt(self.xyTile - vecs.Vec2(5,5))
 
     def drawOutline(self, ren):
         if self.parent.curRedrawGroupID == self.redrawGroup:
@@ -165,16 +209,17 @@ class TileReflection(scions.Panel):
         glowBG = utils.interp3( baseBG, self.savedGlowValue, (255, 255, 255) )
         glowFG = utils.interp3( baseFG, self.savedGlowValue, (255, 255, 255) )
 
+        shiftBG = utils.interp3( glowBG, 0.3, self.savedColourShift )
+
         for xy in utils.range2(self.panelSize):
-            ren.drawChar( xy, self._reflector.displayChar, fg = glowFG, bg = glowBG )
+            ren.drawChar( xy, self._reflector.displayChar, fg = glowFG, bg = shiftBG )
 
     def drawContents(self, ren):
         if self._reflector.occupant is not None:
-            ren.drawChar( (1,1), self._reflector.occupant.displayChar, fg=(255, 0, 0) )
+            ren.drawChar( (1,1), self._reflector.occupant.displayChar, self._reflector.occupant.displayFG )
         else:
             pass
 #            ren.drawChar( (1,1), " " )
-
 
 class ZoneOverlay(scions.Scion):
     bgDebug = (255, 255, 255)

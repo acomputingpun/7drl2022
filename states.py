@@ -15,7 +15,7 @@ class State():
         self.activeZone.addActor(self.hero)
         self.hero.setTile(self.activeZone.grid.lookup( (4, 4) ))
 
-        bMob = mobs.Mob(self.roller)
+        bMob = mobs.Enemy(self.roller)
         bMob.setTile(self.activeZone.grid.lookup((2, 2)))
         self.activeZone.addActor(bMob)
 

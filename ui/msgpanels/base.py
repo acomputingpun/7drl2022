@@ -1,17 +1,22 @@
 import vecs, math, xchars
 from .. import scions, animas
 
-class MessagePanel(scions.Panel):
+class BaseMessagePanel(scions.Panel):
     xyAnchor = (1, 1)
     _panelSize = vecs.Vec2(43, 6)
-
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.curMessages = []
 
     def drawOutline(self, ren):
         for xyDraw in self.allDraws():
             ren.drawChar( xyDraw, " ", fg =(216, 216, 216), bg = (0, 25, 0))
+
+class SpecialMessagePanel(BaseMessagePanel):
+    def drawContents(self, ren):
+        pass
+
+class MessagePanel(BaseMessagePanel):
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.curMessages = []
 
     def drawContents(self, ren):
         yDraw = 0
@@ -33,7 +38,7 @@ class MessagePanel(scions.Panel):
         message.register(self.interf)
 
 class Message(animas.Anima):
-    perCharMS = 25
+    perCharMS = 6
 
     def __init__(self, plaintext):
         self.plaintext = plaintext

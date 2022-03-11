@@ -7,8 +7,14 @@ class Action():
 
     def tryAdvance(self, interf):
         if not self._finished:
-            self._advance(interf)
+            if self.isValid():
+                self._advance(interf)
+            else:
+                print ("ERR: Skipping execution of invalid action", self)
             self._finished = True
+
+    def isValid(self):
+        return True
 
     def _advance(self, interf):
         raise NotImplementedError()
@@ -27,6 +33,9 @@ class ShiftStep(Action):
 
     def _advance(self, interf):
         self.actor.actShiftStep(self.destTile, interf)
+
+    def isValid(self):
+        return self.actor.canOccupy(self.destTile)
 
 class TakeDamage(Action):
     def __init__(self, actor, damage):

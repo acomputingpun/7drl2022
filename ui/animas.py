@@ -1,4 +1,4 @@
-import timing
+import timing, math
 from . import scions
 
 class Anima():
@@ -45,6 +45,9 @@ class Periodic():
             return self.MS() / self.periodMS
     def sawtoothFrac(self):
         return abs(self.frac() - 0.5)*2
+
+    def sineFrac(self):
+        return math.sin( self.frac() * math.pi * 2)
 
     def reset(self):
         self.timer.reset()

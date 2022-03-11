@@ -39,8 +39,6 @@ class Renderer():
         self.xyOffset = (0,0)
         self.zLevel = 0
 
-#        self.texCache = {}
-
         self.setup()
 
     def setup(self):
@@ -95,6 +93,12 @@ class Renderer():
     def drawXChar(self, xyPos, value = None, fg=None, bg=None):
         self.put(xyPos[0]+self.xyOffset[0], xyPos[1]+self.xyOffset[1], self.zLevel, value, fg, bg)        
 
+    def drawRect(self, xyPos, xySize, char, fg=None, bg=None):
+        x, y = xyPos[0]+self.xyOffset[0], xyPos[1] + self.xyOffset[1]
+        for y in range( xyPos[1]+self.xyOffset[1], xyPos[1]+self.xyOffset[1]+xySize[1] ):
+            for x in range( xyPos[0]+self.xyOffset[0], xyPos[0]+self.xyOffset[0]+xySize[0] ):
+                self.put(x, y, self.zLevel, ord(char), fg, bg)
+
     def drawAlpha(self, xyPos, fg=None, bg=None, opacity = 1):
         x, y = (xyPos[0]+self.xyOffset[0], xyPos[1]+self.xyOffset[1])
         if 0<=x<self.xSize and 0<=y<self.ySize:
@@ -128,9 +132,12 @@ class Renderer():
                         self.computeDirty[x][y] = True
 
     def flush(self):
+        D_fDraws = 0
+        D_cDraws = 0
         for y in range(self.ySize):
             for x in range(self.xSize):
                 if self.computeDirty[x][y]:
+                    D_cDraws += 1
                     self.computeDirty[x][y] = False
 
                     (dChar, dFG, dBG) = (self.charMatrix[x][y], self.fgMatrix[x][y], self.bgMatrix[x][y])
@@ -147,6 +154,7 @@ class Renderer():
                         self.bgMatrixPrev[x][y] = dBG
 
                     if drawDirty:
+                        D_fDraws += 1
                         if self.charMatrixPrev[x][y] < 0:
                             sourceRect = self.intMap[-self.charMatrix[x][y]]
                         else:
@@ -162,6 +170,7 @@ class Renderer():
         sdl2.SDL_RenderPresent(self.rcon);
         self.zBuffer = [[0 for y in range(self.ySize)] for x in range(self.xSize)]
         self.zLevel = 0
+#        print ("Drawn with {} fDraws / {} cDraws".format(D_fDraws, D_cDraws))
 
     def forceQuit(self):
         exit()

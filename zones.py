@@ -39,6 +39,11 @@ class Zone():
     def addActor(self, actor):
         self.turnScheduler.actors.append(actor)
 
+    def allActors(self):
+        return self.turnScheduler.actors[:]
+    def sortedActors(self):
+        return sorted( self.allActors(), key= lambda actor: actor.displayPriorityID )
+
     def fillGrid(self):
         raise NotImplementedError
 

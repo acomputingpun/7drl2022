@@ -17,7 +17,15 @@ class RequestActionWarp(GameWindowWarp):
             self.trySubmitAction( actions.Wait(self.hero) )
         elif vec in dirconst.CARDINALS:
             destTile = self.hero.tile.relTile(vec)
-            self.trySubmitAction( actions.ShiftStep(self.hero, destTile ))
+            if self.hero.canOccupy(destTile):
+                self.trySubmitAction( actions.ShiftStep(self.hero, destTile ))
+            else:
+                if destTile is None:
+                    self.interf.activeWindow.afxPostMessage( "Movement error: invalid destination." )
+                elif destTile.occupant is not None:
+                    self.interf.activeWindow.afxPostMessage( "Movement error: destination occupied." )
+                else:
+                    self.interf.activeWindow.afxPostMessage( "Movement error: invalid destination." )
 
     def warpOtherKey(self, key):
         if key == 113: # q

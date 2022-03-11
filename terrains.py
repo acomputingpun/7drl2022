@@ -3,7 +3,7 @@ import xchars, random
 class Terrain():
     displayChar = "?"
     displayFG = (60, 120, 60)
-    displayBG = (20, 40, 20)
+    displayBG = (30, 30, 30)
 
     blocksMovement = False
 
